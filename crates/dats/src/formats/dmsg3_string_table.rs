@@ -205,7 +205,7 @@ mod tests {
         dat_path.push("resources/test/key_items.DAT");
 
         Dmsg3StringTable::check_path(&dat_path).unwrap();
-        let res = Dmsg3StringTable::from_path_checked_during(&dat_path).unwrap();
+        let res = Dmsg3StringTable::from_path_checked_yaml(&dat_path).unwrap();
 
         assert_eq!(
             res.lists.get(&1).unwrap().content[0],

@@ -66,6 +66,31 @@ pub trait DatFormat: Sized {
         let original_bytes = fs::read(path)?;
         let res = Self::from_path(path)?;
         let re_encoded_bytes = res.to_bytes()?;
+        Self::compare_bytes(path, original_bytes, re_encoded_bytes)?;
+        Ok(res)
+    }
+
+    #[cfg(test)]
+    fn from_path_checked_yaml(path: &PathBuf) -> Result<Self>
+    where
+        Self: serde::Serialize + serde::de::DeserializeOwned,
+    {
+        let original_bytes = fs::read(path)?;
+        let res = Self::from_path(path)?;
+
+        let yaml_string = serde_yaml::to_string(&res)?;
+        let re_read_res: Self = serde_yaml::from_str(&yaml_string)?;
+
+        let re_encoded_bytes = re_read_res.to_bytes()?;
+        Self::compare_bytes(path, original_bytes, re_encoded_bytes)?;
+        Ok(res)
+    }
+
+    fn compare_bytes(
+        path: &PathBuf,
+        original_bytes: Vec<u8>,
+        re_encoded_bytes: Vec<u8>,
+    ) -> Result<()> {
         if re_encoded_bytes.len() != original_bytes.len() || re_encoded_bytes != original_bytes {
             let first_diff_idx = original_bytes
                 .iter()
@@ -102,6 +127,7 @@ pub trait DatFormat: Sized {
                 &re_encoded_bytes[context_start..context_end],
             ));
         }
-        Ok(res)
+
+        Ok(())
     }
 }

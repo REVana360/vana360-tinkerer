@@ -178,7 +178,7 @@ mod tests {
         dat_path.push("resources/test/pol_messages.DAT");
 
         XiStringTable::check_path(&dat_path).unwrap();
-        let res = XiStringTable::from_path_checked(&dat_path).unwrap();
+        let res = XiStringTable::from_path_checked_yaml(&dat_path).unwrap();
 
         assert_eq!(
             res.strings.get(&0).unwrap(),

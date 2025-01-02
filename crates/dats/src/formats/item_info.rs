@@ -664,7 +664,7 @@ mod tests {
         dat_path.push("resources/test/weapons.DAT");
 
         ItemInfoTable::check_path(&dat_path).unwrap();
-        let res = ItemInfoTable::from_path_checked(&dat_path).unwrap();
+        let res = ItemInfoTable::from_path_checked_yaml(&dat_path).unwrap();
 
         if let ItemStrings::English {
             name,
@@ -690,7 +690,7 @@ mod tests {
         dat_path.push("resources/test/armor2.DAT");
 
         ItemInfoTable::check_path(&dat_path).unwrap();
-        let res = ItemInfoTable::from_path_checked_during(&dat_path).unwrap();
+        let res = ItemInfoTable::from_path_checked_yaml(&dat_path).unwrap();
 
         if let ItemStrings::English {
             name,

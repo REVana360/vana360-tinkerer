@@ -160,7 +160,7 @@ mod tests {
         dat_path.push("resources/test/status_infos.DAT");
 
         StatusInfoTable::check_path(&dat_path).unwrap();
-        let res = StatusInfoTable::from_path_checked_during(&dat_path).unwrap();
+        let res = StatusInfoTable::from_path_checked_yaml(&dat_path).unwrap();
 
         assert_eq!(
             res.status_infos[0].description,

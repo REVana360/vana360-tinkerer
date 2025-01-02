@@ -421,6 +421,6 @@ mod tests {
         dat_path.push("resources/test/menu.DAT");
 
         MenuTable::check_path(&dat_path).unwrap();
-        MenuTable::from_path_checked(&dat_path).unwrap();
+        MenuTable::from_path_checked_yaml(&dat_path).unwrap();
     }
 }
