@@ -272,7 +272,7 @@ pub struct MonipulatorData {
 
 impl ItemInfo {
     pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<ItemInfo> {
-        let mut item_bytes = walker.take_bytes(0xC00)?.to_vec();
+        let mut item_bytes = walker.take_bytes(ENTRY_SIZE)?.to_vec();
         rotate_all(&mut item_bytes, 5);
 
         // Parse the icon
@@ -455,7 +455,7 @@ impl ItemInfo {
     }
 
     pub fn write<T: WritingByteWalker>(&self, outer_walker: &mut T) -> Result<()> {
-        let mut walker = VecByteWalker::with_size(0xC00);
+        let mut walker = VecByteWalker::with_size(ENTRY_SIZE);
 
         walker.write(self.id);
         walker.write(self.flags.bits());
@@ -587,7 +587,7 @@ impl ItemInfo {
         walker.goto(0x280);
         walker.write(self.icon_bytes.len() as u32);
         walker.write_bytes(&self.icon_bytes);
-        walker.write_at::<u8>(0xC00 - 1, 0xFF);
+        walker.write_at::<u8>(ENTRY_SIZE - 1, 0xFF);
 
         rotate_all(walker.as_mut_slice(), 3);
         outer_walker.write_bytes(walker.as_slice());
