@@ -1,5 +1,8 @@
 {
-  "tauri": {
+  "bundle": {
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
     "updater": {
       "active": true,
       "dialog": true,
