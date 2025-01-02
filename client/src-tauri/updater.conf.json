@@ -1,6 +1,6 @@
 {
   "bundle": {
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": "v1Compatible"
   },
   "plugins": {
     "updater": {
