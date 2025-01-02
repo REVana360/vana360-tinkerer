@@ -11,7 +11,7 @@ use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
 use processor::{dat_descriptor::DatDescriptor, processor::DatProcessor};
 use serde::Serialize;
-use tauri::{async_runtime, App, AppHandle, Manager};
+use tauri::{async_runtime, App, AppHandle, Emitter, Manager};
 
 use crate::{app_persistence::PersistenceData, errors::AppError, RAW_DATA_DIR};
 

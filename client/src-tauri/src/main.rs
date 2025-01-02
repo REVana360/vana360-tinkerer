@@ -27,8 +27,12 @@ pub const ZONE_MAPPING_FILE: &'static str = "zones.yml";
 fn main() {
     check_cli();
 
-    let speta_builder = {
-        let builder = tauri_specta::ts::builder().commands(tauri_specta::collect_commands![
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
+    let specta_builder =
+        tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
             commands::dummy_event_type_gen,
             commands::select_ffxi_folder,
             commands::select_project_folder,
@@ -46,20 +50,18 @@ fn main() {
             commands::copy_lookup_tables,
         ]);
 
-        #[cfg(debug_assertions)]
-        let builder = builder.path("../src/bindings.ts").header("// @ts-nocheck");
-
-        builder.build().unwrap()
-    };
-
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
+    #[cfg(debug_assertions)]
+    specta_builder
+        .export(
+            specta_typescript::Typescript::default(),
+            "../src/bindings.ts",
+        )
+        .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(speta_builder)
+        .invoke_handler(specta_builder.invoke_handler())
         .invoke_handler(tauri::generate_handler![
             commands::select_ffxi_folder,
             commands::select_project_folder,
