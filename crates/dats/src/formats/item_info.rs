@@ -73,9 +73,6 @@ pub struct ItemInfo {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemStrings {
     #[serde(untagged)]
-    Name { name: String },
-
-    #[serde(untagged)]
     English {
         name: String,
         article_type: EnglishArticle,
@@ -83,6 +80,9 @@ pub enum ItemStrings {
         plural_name: String,
         description: String,
     },
+
+    #[serde(untagged)]
+    Name { name: String },
 }
 
 #[derive(Debug, Clone)]
