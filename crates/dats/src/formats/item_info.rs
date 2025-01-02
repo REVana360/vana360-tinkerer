@@ -16,7 +16,7 @@ use crate::{
     utils::{get_nibble, rotate_all},
 };
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ItemInfo {
     id: u32,
 
@@ -70,7 +70,7 @@ pub struct ItemInfo {
     icon_bytes: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemStrings {
     #[serde(untagged)]
     Name { name: String },
@@ -150,7 +150,7 @@ impl ItemCategory {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EquipmentData {
     level: u16,
     slots: EquipmentSlot,
@@ -169,7 +169,7 @@ pub struct EquipmentData {
     unknown3: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WeaponData {
     damage: u16,
     delay: u16,
@@ -179,14 +179,14 @@ pub struct WeaponData {
     unknown1: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PuppetItemData {
     slot: PuppetSlot,
     element_charge: ElementValues,
     unknown1: u32,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ElementValues {
     fire: u8,
     ice: u8,
@@ -226,7 +226,7 @@ impl From<ElementValues> for u32 {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InstinctData {
     unknown1: u32,
     unknown2: u32,
@@ -238,14 +238,14 @@ pub struct InstinctData {
     unknown7: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FurnishingData {
     element: Element,
     storage_slots: u32,
     unknown3: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UsableItemData {
     activation_time: u16,
     unknown1: u32,
@@ -253,18 +253,18 @@ pub struct UsableItemData {
     unknown3: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CurrencyData {
     unknown1: u16,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SlipData {
     unknown1: u16,
     unknowns: [u32; 17],
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MonipulatorData {
     unknown1: u16,
     unknowns: [u32; 24],
@@ -596,7 +596,7 @@ impl ItemInfo {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ItemInfoTable {
     items: Vec<ItemInfo>,
 }

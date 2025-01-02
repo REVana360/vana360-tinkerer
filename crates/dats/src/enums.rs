@@ -4,7 +4,9 @@
 use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, IntoPrimitive,
+)]
 #[repr(u8)]
 pub enum SkillType {
     #[default]
@@ -56,7 +58,9 @@ pub enum SkillType {
     Special = 0xff,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, IntoPrimitive,
+)]
 #[repr(u16)]
 pub enum ItemType {
     None = 0,
@@ -102,7 +106,9 @@ impl Default for ItemType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, IntoPrimitive,
+)]
 #[repr(u16)]
 pub enum PuppetSlot {
     #[default]
@@ -113,7 +119,9 @@ pub enum PuppetSlot {
     Attachment = 3,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, TryFromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TryFromPrimitive, IntoPrimitive,
+)]
 #[repr(u16)]
 pub enum Element {
     Fire = 0x00,
@@ -128,7 +136,9 @@ pub enum Element {
     Undecided = 0xFFFF,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, IntoPrimitive,
+)]
 #[repr(u8)]
 pub enum AbilityType {
     General = 0,
@@ -161,7 +171,9 @@ pub enum AbilityType {
     Unknown(u8),
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, IntoPrimitive,
+)]
 #[repr(u16)]
 pub enum MagicType {
     None = 0,
