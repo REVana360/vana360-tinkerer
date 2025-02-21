@@ -72,11 +72,11 @@ const navItems: NavItem[] = [
 function App() {
   return (
     <main class="h-screen w-screen">
-      <div class="flex flex-row">
+      <div class="flex flex-row w-screen">
         <Sidebar navItems={navItems} />
 
-        <div class="flex flex-grow flex-col min-w-0 basis-0">
-          <div class="content flex flex-grow overflow-y-auto">
+        <div class="flex flex-col flex-grow min-w-0 basis-0 h-screen">
+          <div class="content flex-grow overflow-y-auto">
             <Routes>
               <Route path="/" component={Home}></Route>
 

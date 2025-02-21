@@ -92,11 +92,11 @@ function Table<
   });
 
   return (
-    <div>
+    <div class="w-full h-screen">
       <h1>{title}</h1>
       <hr />
 
-      <div>
+      <div class="w-full h-screen">
         <div class="flex flex-row space-x-5">
           <input
             class="mt-3"
@@ -109,7 +109,7 @@ function Table<
         </div>
 
         <Show when={!rowsResource.loading} fallback={<div>Loading...</div>}>
-          <table class="table-auto">
+          <table class="w-full h-full">
             <thead>
               <tr>
                 {columns.map((col) => (

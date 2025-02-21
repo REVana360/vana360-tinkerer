@@ -103,16 +103,16 @@ impl ChunkData {
             }
 
             // MMB
-            0x2E => {
-                Self::decode_05(data.to_vec())
-                    .and_then(|decoded| Self::decode_ffff(decoded))
-                    .and_then(|decoded| ZoneMmb::parse(&mut VecByteWalker::on(decoded)))
-                    .map(|zone_mmb| ChunkData::ZoneMmb { zone_mmb })
-                    .or_else(|err| {
-                        eprintln!("Failed to parse MMB: {err:?}");
-                        Ok(ChunkData::Unknown { data: data.into() })
-                    })
-            }
+            // 0x2E => {
+            //     Self::decode_05(data.to_vec())
+            //         .and_then(|decoded| Self::decode_ffff(decoded))
+            //         .and_then(|decoded| ZoneMmb::parse(&mut VecByteWalker::on(decoded)))
+            //         .map(|zone_mmb| ChunkData::ZoneMmb { zone_mmb })
+            //         .or_else(|err| {
+            //             eprintln!("Failed to parse MMB: {err:?}");
+            //             Ok(ChunkData::Unknown { data: data.into() })
+            //         })
+            // }
 
             // Notes from other projects:
             0x20 | // IMG

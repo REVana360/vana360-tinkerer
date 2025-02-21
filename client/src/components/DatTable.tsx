@@ -123,7 +123,7 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
   });
 
   return (
-    <div>
+    <div class="w-full">
       <h1>{title}</h1>
       <hr />
 

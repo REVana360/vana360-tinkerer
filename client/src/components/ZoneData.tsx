@@ -3,8 +3,6 @@ import {
   Switch,
   createEffect,
   createResource,
-  createSignal,
-  lazy,
   onCleanup,
   onMount,
 } from "solid-js";
@@ -17,16 +15,8 @@ import {
   CSS2DObject,
   CSS2DRenderer,
 } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { BufferGeometryUtils, FlyControls, MapControls } from "three/examples/jsm/Addons.js";
+import { FlyControls, MapControls } from "three/examples/jsm/Addons.js";
 import Stats from 'three/addons/libs/stats.module.js';
-import { randFloat, randInt } from "three/src/math/MathUtils.js";
-import {
-  color,
-  MeshBasicNodeMaterial,
-  mix,
-  positionLocal,
-  vec4,
-} from "three/examples/jsm/nodes/Nodes.js";
 import { unwrap } from "../util";
 
 interface ZoneDataProps {}
@@ -55,103 +45,77 @@ function ZoneData({}: ZoneDataProps) {
   const mouse = new THREE.Vector2(1, 1);
 
   const scene = new THREE.Scene();
+  scene.scale.set(1, 1, -1); // FFXI mesh is flipped on the z-axis
   scene.background = new THREE.Color(0x3333333);
 
+  // Grid
   const grid = new THREE.GridHelper(2000, 200, 0xAAAAAA, 0xAAAAAA);
   grid.material.opacity = 0.2;
   grid.material.transparent = true;
   scene.add(grid);
 
-  // LIGHTS
-
-  const hemiLight = new THREE.HemisphereLight();
-  hemiLight.color.setRGB(0.3, 0.3, 0.3);
-  hemiLight.groundColor.setRGB(0.6, 0.6, 0.6);
-  hemiLight.position.set(-50, 50, 0);
+  // Lights
+  const hemiLight = new THREE.HemisphereLight(0xE5F5FF, 0xB97A20, 1.5);
+  hemiLight.position.set(300, 1000, 300);
   scene.add(hemiLight);
 
-  // const hemiLightHelper = new THREE.HemisphereLightHelper( hemiLight, 10 );
-  // scene.add( hemiLightHelper );
-
-  // const light = new THREE.DirectionalLight( 0xd5deff );
-  // light.position.x = 300;
-  // light.position.y = 250;
-  // light.position.z = - 500;
-  // scene.add( light );
-
-  // const topColor = new THREE.Color().copy( light.color );
-  // const bottomColor = new THREE.Color( 0xffffff );
-  // const offset = 400;
-  // const exponent = 0.6;
-
-  // const h = positionLocal.add( offset ).normalize().y;
-
-  // const skyMat = new MeshBasicNodeMaterial();
-  // skyMat.colorNode = vec4( mix( color( bottomColor ), color( topColor ), h.max( 0.0 ).pow( exponent ) ), 1.0 );
-  // skyMat.side = THREE.BackSide;
-
-  // const sky = new THREE.Mesh( new THREE.SphereGeometry( 4000, 32, 15 ), skyMat );
-  // scene.add( sky );
-
-  // scene.add( new THREE.AmbientLight( 0x444444, 3 ) );
-
-  // const light1 = new THREE.DirectionalLight( 0xffffff, 1.5 );
-  // light1.position.set( 1, 1, 1 );
-  // scene.add( light1 );
-
-  // const light2 = new THREE.DirectionalLight( 0xffffff, 4.5 );
-  // light2.position.set( 0, - 1, 0 );
-  // scene.add( light2 );
-
+  // Camera
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 5000);
   camera.position.set(200, 200, 200);
   camera.lookAt(0, 0, 0);
 
+  // Zone model mesh
   let currentModelMesh: THREE.Mesh[] = [];
   createEffect(() => {
     cleanUpMeshes();
 
-    let model = modelResource();
-    if (!model) {
+    const buffer = modelResource();
+    if (!buffer) {
       return;
     }
 
-    console.time("setup-mesh");
+    console.time("setup-mesh-" + zoneId);
 
     const color = new THREE.Color();
-    color.setRGB(0.5, 0.5, 0.5);
+    color.setRGB(0.2, 0.2, 0.2);
 
-    let triangleCount = new Uint32Array(model, 0, 1)[0];
-    const dataSize = triangleCount * 3 * 3;
-    const positions = new Float32Array(model, 4, dataSize);
-    const normals = new Float32Array(model, 4 + dataSize * 4, dataSize);
+    const header = new Uint32Array(buffer, 0, 2);
+    const triangleCount = header[0];
+    const vertexCount = header[1];
+    const vertices = new Float32Array(buffer, 8, vertexCount * 3);
+    const indices = new Uint32Array(buffer, 8 + vertexCount * 3 * 4, triangleCount * 3);
 
-    const colors = new Uint8Array(dataSize);
-    for (let i = 0; i < dataSize; i+=3) {
+    const colors = new Uint8Array(vertexCount * 3);
+    for (let i = 0; i < vertexCount * 3; i += 3) {
       colors.set([color.r * 255, color.g * 255, color.b * 255], i);
     }
-  
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.index = new THREE.Uint32BufferAttribute(indices, 1);
+
+    geometry.computeVertexNormals();
     geometry.computeBoundingBox();
 
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshLambertMaterial({
       color: 0x333333,
       vertexColors: true,
       polygonOffset: true,
       polygonOffsetFactor: 1, // positive value pushes polygon further away
-      polygonOffsetUnits: 1
+      polygonOffsetUnits: 1,
     });
-    
+
     const mesh = new THREE.Mesh(geometry, material);
-    currentModelMesh.push(mesh);
-    
+
     // Add wireframe
     var geo = new THREE.WireframeGeometry(mesh.geometry); // EdgesGeometry or WireframeGeometry
-    var mat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.2, depthTest: true });
+    var mat = new THREE.LineBasicMaterial({
+      color: 0x333333,
+      transparent: true,
+      opacity: 0.2,
+      depthTest: true,
+    });
     var wireframe = new THREE.LineSegments(geo, mat);
     mesh.add(wireframe);
     
@@ -397,9 +361,6 @@ function ZoneData({}: ZoneDataProps) {
         </Match>
         <Match when={modelResource.error}>
           <div>Error: {modelResource.error}</div>
-        </Match>
-        <Match when={modelResource()}>
-          <div>Done with {modelResource()!.grid_offset}</div>
         </Match>
       </Switch>
     </div>
