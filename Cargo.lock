@@ -2994,11 +2994,14 @@ dependencies = [
  "serde",
  "serde_yaml",
  "specta",
- "thiserror 1.0.69",
  "threadpool",
  "tokio",
  "walkdir",
 ]
+
+[[package]]
+name = "project"
+version = "0.1.0"
 
 [[package]]
 name = "quick-xml"
@@ -5659,6 +5662,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "xi-tinkerer-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "dats",
+ "flate2",
+ "processor",
+ "project",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "walkdir",
+]
+
+[[package]]
 name = "xi_tinkerer"
 version = "0.3.0"
 dependencies = [
@@ -5670,6 +5689,7 @@ dependencies = [
  "notify",
  "parking_lot",
  "processor",
+ "project",
  "serde",
  "serde_json",
  "serde_yaml",

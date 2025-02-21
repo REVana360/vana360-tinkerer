@@ -2,64 +2,26 @@ use std::{
     collections::HashMap,
     fs::File,
     path::PathBuf,
-    str::FromStr,
     sync::{mpsc, Arc},
 };
 
 use anyhow::{anyhow, Result};
-use clap::{Parser, Subcommand};
 use dats::context::{DatContext, ZoneName};
-use processor::processor::{DatProcessingState, DatProcessor};
+use processor::{
+    dat_descriptor::DatDescriptor,
+    processor::{DatProcessingState, DatProcessor},
+};
 use project::{DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE};
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand, Debug)]
-enum Commands {
-    ExportDats {
-        #[arg(value_name = "PROJECT_DIR")]
-        project_dir: String,
-    },
-}
-
-fn attach_console() {
-    #[cfg(windows)]
-    {
-        use windows::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
-        let _ = unsafe { AttachConsole(ATTACH_PARENT_PROCESS) };
-    }
-}
-
-pub fn check_cli() {
-    if std::env::args_os().len() > 1 {
-        // Ensure a console is attached on Windows
-        attach_console();
-    }
-
-    let args = Args::parse();
-
-    if let Some(command) = args.command {
-        match command {
-            Commands::ExportDats { project_dir } => {
-                export_all_dats(project_dir).unwrap();
-            }
-        }
-
-        std::process::exit(0);
-    }
-}
-
-pub fn export_all_dats(project_dir: String) -> Result<()> {
+pub fn make_dats(
+    project_path: PathBuf,
+    yaml_paths: &[PathBuf],
+    out_dir: Option<PathBuf>,
+) -> Result<()> {
     let (tx, rx) = mpsc::channel();
     let mut processor = DatProcessor::new(tx);
 
-    let project_path = PathBuf::from_str(&project_dir)?;
-    println!("Processing project: {}", project_dir);
+    println!("Processing project: {}", project_path.display());
 
     let lookup_dir = project_path.join(LOOKUP_TABLE_DIR);
 
@@ -76,8 +38,38 @@ pub fn export_all_dats(project_dir: String) -> Result<()> {
     )?);
 
     let in_dir = project_path.join(RAW_DATA_DIR);
-    let out_dir = project_path.join(DAT_GENERATION_DIR);
-    let total_count = processor.all_yaml_to_dats(dat_context, &in_dir, &out_dir);
+    let out_dir = out_dir.unwrap_or_else(|| project_path.join(DAT_GENERATION_DIR));
+
+    let mut total_count = 0;
+    if yaml_paths.is_empty() {
+        // Generate all yaml files in project directory
+        total_count = processor.all_yaml_to_dats(dat_context, &in_dir, &out_dir);
+    } else {
+        // Try to generate from specified yaml files
+        let dat_descriptors = yaml_paths.iter().filter_map(|path| {
+            match DatDescriptor::from_path(&path, &in_dir, &dat_context) {
+                Some(descriptor) => Some(descriptor),
+                None => {
+                    eprintln!(
+                        "Was not able to load or determine DAT for the yaml file: {}",
+                        path.display()
+                    );
+                    None
+                }
+            }
+        });
+
+        for dat_descriptor in dat_descriptors {
+            processor.yaml_to_dat(
+                dat_descriptor,
+                dat_context.clone(),
+                in_dir.clone(),
+                out_dir.clone(),
+            );
+            total_count += 1;
+        }
+    }
+
     println!("Generating {} DATs", total_count);
 
     let mut finished = 0;

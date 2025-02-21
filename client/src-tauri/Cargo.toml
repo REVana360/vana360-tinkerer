@@ -25,6 +25,7 @@ serde_yaml = "0.9.25"
 glob = "0.3.1"
 dats = { path = "../../crates/dats" }
 processor = { path = "../../crates/processor" }
+project = { path = "../../crates/project" }
 anyhow = "1.0.72"
 thiserror = "1.0.44"
 tracing = "0.1.37"

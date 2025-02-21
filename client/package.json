@@ -1,6 +1,6 @@
 {
   "name": "xi_tinkerer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "XI Tinkerer",
   "scripts": {
     "start": "vite",

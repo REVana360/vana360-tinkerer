@@ -1,0 +1,16 @@
+[package]
+name = "xi-tinkerer-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.71"
+clap = { version = "4.5.23", features = ["derive"] }
+dats = { path = "../dats" }
+processor = { path = "../processor" }
+project = { path = "../project" }
+flate2 = "1.0"
+tokio = { version = "1.29.1", features = ["full"] }
+walkdir = "2.4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9.25"
