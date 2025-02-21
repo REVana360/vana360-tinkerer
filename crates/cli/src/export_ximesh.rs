@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, io::Write, path::PathBuf};
+use std::{io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use dats::{
