@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! name_bytes {
     ($modname:ident,
-        $( $byte:expr => $tag:expr, )*
+        $( $byte:expr_2021 => $tag:expr_2021, )*
     ) => {
         pub(crate) mod $modname {
             #[inline]

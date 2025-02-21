@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-thiserror = "1.0.35"
+thiserror = "2.0.11"
 common = { path = "../common" }
 encoding = { path = "../encoding" }
-anyhow = "1.0.71"
+anyhow = "1.0.96"
 serde = { version = "1.0.162", features = ["derive"] }
 serde_derive = "1.0.162"
 regex = "1.9.1"
-base64 = "0.21.3"
+base64 = "0.22.1"
 bitflags = "2.4.0"
 num_enum = "0.7.0"
 

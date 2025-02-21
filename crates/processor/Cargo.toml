@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.96"
 dats = { path = "../dats" }
 threadpool = "1.8.1"
 serde = "1.0.180"
 serde_yaml = "0.9.25"
-specta = { version = "2.0.0-rc.12", features = ["derive"] }
+specta = { version = "2.0.0-rc.21", features = ["derive"] }
 tokio = { version = "1.29.1", features = ["full"] }
 walkdir = "2.4.0"
