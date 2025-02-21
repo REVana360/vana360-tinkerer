@@ -73,6 +73,7 @@ pub enum DatDescriptor {
     UnityDialogs,
 
     // Dats by zone
+    ZoneData(ZoneId),
     EntityNames(ZoneId),
     Dialog(ZoneId),
     Dialog2(ZoneId),
@@ -183,6 +184,9 @@ impl DatDescriptor {
             DatDescriptor::SystemMessages4 => Ok("global_dialog/system_messages4".to_string()),
             DatDescriptor::UnityDialogs => Ok("global_dialog/unity_dialogs".to_string()),
 
+            DatDescriptor::ZoneData(zone_id) => {
+                Self::get_zoned_file_name(dat_context, "zones", zone_id)
+            }
             DatDescriptor::EntityNames(zone_id) => {
                 Self::get_zoned_file_name(dat_context, "entity_names", zone_id)
             }
@@ -218,6 +222,7 @@ impl DatDescriptor {
         {
             // Files in sub-directories
             return match parent {
+                "zones" => Self::get_zone_id(file_name, dat_context).map(DatDescriptor::ZoneData),
                 "entity_names" => {
                     Self::get_zone_id(file_name, dat_context).map(DatDescriptor::EntityNames)
                 }
@@ -414,6 +419,9 @@ impl DatDescriptor {
             }
 
             // By zone
+            DatDescriptor::ZoneData(zone_id) => {
+                converter.use_dat(DatIdMapping::get().zone_data.get_result(&zone_id)?.clone())
+            }
             DatDescriptor::EntityNames(zone_id) => {
                 converter.use_dat(DatIdMapping::get().entities.get_result(&zone_id)?.clone())
             }

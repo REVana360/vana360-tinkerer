@@ -19,6 +19,42 @@ impl VecByteWalker {
             offset: 0,
         }
     }
+
+    #[inline]
+    pub fn swap_8_bytes(&mut self, a: usize, b: usize) {
+        debug_assert!(
+            self.data.len() > a + 8,
+            "a is {} and len is {}",
+            a,
+            self.data.len()
+        );
+        debug_assert!(
+            self.data.len() > b + 8,
+            "b is {} and len is {}",
+            b,
+            self.data.len()
+        );
+        unsafe {
+            let ptr = self.data.as_mut_ptr();
+            let ptr_a = ptr.add(a) as *mut u64;
+            let ptr_b = ptr.add(b) as *mut u64;
+            let tmp = ptr_a.read_unaligned();
+            ptr_a.write_unaligned(ptr_b.read_unaligned());
+            ptr_b.write_unaligned(tmp);
+        }
+    }
+
+    #[inline]
+    pub fn swap_8_bytes_xor(&mut self, a: usize, b: usize) {
+        unsafe {
+            let ptr = self.data.as_mut_ptr();
+            let ptr_a = ptr.add(a) as *mut u64;
+            let ptr_b = ptr.add(b) as *mut u64;
+            ptr_a.write_unaligned(ptr_a.read_unaligned() ^ ptr_b.read_unaligned());
+            ptr_b.write_unaligned(ptr_a.read_unaligned() ^ ptr_b.read_unaligned());
+            ptr_a.write_unaligned(ptr_a.read_unaligned() ^ ptr_b.read_unaligned());
+        }
+    }
 }
 
 impl WritingByteWalker for VecByteWalker {
@@ -80,5 +116,34 @@ impl WritingByteWalker for VecByteWalker {
 
     fn into_vec(self) -> Vec<u8> {
         self.data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::byte_walker::ByteWalker;
+
+    use super::VecByteWalker;
+
+    #[test]
+    pub fn swapping_8_bytes() {
+        let data = Vec::from_iter(0..100u8);
+        let mut walker = VecByteWalker::on(data);
+
+        let bytes_at_6 = u64::from_le_bytes([6, 7, 8, 9, 10, 11, 12, 13]);
+        let bytes_at_20 = u64::from_le_bytes([20, 21, 22, 23, 24, 25, 26, 27]);
+
+        assert_eq!(walker.read_le_at::<u64>(6).unwrap(), bytes_at_6);
+        assert_eq!(walker.read_le_at::<u64>(20).unwrap(), bytes_at_20);
+
+        walker.swap_8_bytes(6, 20);
+
+        assert_eq!(walker.read_le_at::<u64>(20).unwrap(), bytes_at_6);
+        assert_eq!(walker.read_le_at::<u64>(6).unwrap(), bytes_at_20);
+
+        walker.swap_8_bytes_xor(6, 20);
+
+        assert_eq!(walker.read_le_at::<u64>(6).unwrap(), bytes_at_6);
+        assert_eq!(walker.read_le_at::<u64>(20).unwrap(), bytes_at_20);
     }
 }

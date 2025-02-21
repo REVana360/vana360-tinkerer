@@ -1,3 +1,4 @@
+pub mod chunk_key_tables;
 mod conversion_tables;
 pub mod decoder;
 pub mod encoder;

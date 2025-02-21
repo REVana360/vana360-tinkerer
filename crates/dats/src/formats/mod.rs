@@ -9,3 +9,4 @@ pub mod menu_table;
 pub mod status_info;
 pub mod string_table;
 pub mod xistring_table;
+pub mod zone_data;

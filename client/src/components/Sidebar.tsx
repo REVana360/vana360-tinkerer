@@ -45,7 +45,7 @@ function Sidebar(props: { navItems: NavItem[] }) {
   } = useData();
 
   return (
-    <aside class="flex bg-slate-800 text-slate-100 h-screen p-2 w-48 border-r border-slate-600 justify-between">
+    <aside class="flex bg-slate-800 text-slate-100 h-screen p-2 border-r border-slate-600 justify-between">
       <nav class="flex flex-col flex-grow justify-stretch mb-2 gap-2">
         <div class="flex flex-col flex-grow gap-2">
           <div class="font-bold text-center text-2xl">XI Tinkerer</div>

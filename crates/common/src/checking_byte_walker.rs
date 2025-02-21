@@ -87,19 +87,27 @@ impl<BW: ByteWalker> WritingByteWalker for CheckingByteWalker<BW> {
         }
     }
 
-    fn write_be<T: HasByteFunctions + Eq + std::fmt::Debug>(&mut self, value: T) {
+    fn write_be<T: HasByteFunctions + PartialEq + std::fmt::Debug>(&mut self, value: T) {
         assert_eq!(self.original.step_be::<T>().unwrap(), value);
     }
 
-    fn write_le<T: HasByteFunctions + Eq + std::fmt::Debug>(&mut self, value: T) {
+    fn write_le<T: HasByteFunctions + PartialEq + std::fmt::Debug>(&mut self, value: T) {
         assert_eq!(self.original.step_le::<T>().unwrap(), value);
     }
 
-    fn write_be_at<T: HasByteFunctions + Eq + std::fmt::Debug>(&mut self, offset: usize, value: T) {
+    fn write_be_at<T: HasByteFunctions + PartialEq + std::fmt::Debug>(
+        &mut self,
+        offset: usize,
+        value: T,
+    ) {
         assert_eq!(self.original.read_be_at::<T>(offset).unwrap(), value);
     }
 
-    fn write_le_at<T: HasByteFunctions + Eq + std::fmt::Debug>(&mut self, offset: usize, value: T) {
+    fn write_le_at<T: HasByteFunctions + PartialEq + std::fmt::Debug>(
+        &mut self,
+        offset: usize,
+        value: T,
+    ) {
         assert_eq!(self.original.read_le_at::<T>(offset).unwrap(), value);
     }
 

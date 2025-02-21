@@ -15,6 +15,7 @@ use crate::{
     state::{AppState, FileNotification},
     DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE,
 };
+use tauri::ipc::Response;
 
 #[tauri::command]
 #[specta::specta]
@@ -64,7 +65,118 @@ pub async fn get_zones_for_type(
         .clone()
         .ok_or(anyhow!("No DAT context."))?;
 
-    Ok(dat_query::get_zone_ids_for_type(dat_descriptor, dat_context).await)
+    Ok(dat_query::get_zone_infos_for_type(dat_descriptor, dat_context).await)
+}
+
+#[tauri::command]
+pub async fn get_zone_model(
+    dat_descriptor: DatDescriptor,
+    state: AppState<'_>,
+) -> Result<Response, AppError> {
+    let dat_context = state
+        .read()
+        .dat_context
+        .clone()
+        .ok_or(anyhow!("No DAT context."))?;
+
+    let zone_model = dat_query::get_zone_model(dat_descriptor, dat_context).await;
+    match &zone_model {
+        Some(model) => eprintln!("Grid offset: {}", model.grid_offset),
+        None => {
+            eprintln!("NO MODEL FOUND!");
+            return Err(anyhow!("Bah").into());
+        }
+    }
+
+    let triangle_count: usize = zone_model
+        .as_ref()
+        .unwrap()
+        .collision_mesh
+        .grid_entries
+        .iter()
+        .map(|grid_entry| {
+            grid_entry
+                .mesh_entries
+                .iter()
+                .map(|mesh_entry| mesh_entry.triangles.len())
+        })
+        .flatten()
+        .sum();
+
+    // Mesh structure is:
+    // - Triangles:   u32
+    // - Positions:   triangle count * 3 vertices per triangle * 3 coords per triangle * f32 per coord
+    // - Normals  :   triangle count * (1x) same for each vertex in triangle * 3 coords per triangle * f32 per coord
+    let normals_byte_len = triangle_count * 3 * size_of::<f32>();
+    let positions_byte_len = normals_byte_len * 3;
+    let mut mesh_data = vec![0u8; size_of::<u32>() + positions_byte_len + normals_byte_len];
+
+    let positions_start = 4;
+    let normals_start = 4 + positions_byte_len;
+    let mut positions_offset = 0;
+    let mut normals_offset = 0;
+
+    // SAFETY: indexing into mesh_data that has been sized as necessary above, so no bounds should fail
+    unsafe {
+        // Write in triangle count
+        mesh_data
+            .get_unchecked_mut(..4)
+            .copy_from_slice(&(triangle_count as u32).to_le_bytes());
+
+        // Write all the vertices and normals
+        zone_model
+            .as_ref()
+            .unwrap()
+            .collision_mesh
+            .grid_entries
+            .iter()
+            .for_each(|grid_entry| {
+                grid_entry.mesh_entries.iter().for_each(|mesh_entry| {
+                    mesh_entry.triangles.iter().for_each(|triangle| {
+                        let normal = mesh_entry
+                            .normals
+                            .get_unchecked(triangle.normal_idx as usize);
+                        let normal_bytes = normal
+                            .x
+                            .to_le_bytes()
+                            .iter()
+                            .chain(normal.y.to_le_bytes().iter())
+                            .chain(normal.z.to_le_bytes().iter())
+                            .copied()
+                            .collect::<Vec<_>>();
+
+                        mesh_data
+                            .get_unchecked_mut(
+                                normals_start + normals_offset..normals_start + normals_offset + 12,
+                            )
+                            .copy_from_slice(&normal_bytes);
+                        normals_offset += 12;
+
+                        for vertex_idx in [
+                            triangle.vertex3_idx,
+                            triangle.vertex2_idx,
+                            triangle.vertex1_idx,
+                        ] {
+                            let vertex = mesh_entry.vertices.get_unchecked(vertex_idx as usize);
+
+                            for (c_idx, coord) in [vertex.x, vertex.y, vertex.z].iter().enumerate()
+                            {
+                                mesh_data
+                                    .get_unchecked_mut(
+                                        positions_start + positions_offset + c_idx * 4
+                                            ..positions_start + positions_offset + (c_idx + 1) * 4,
+                                    )
+                                    .copy_from_slice(&coord.to_le_bytes());
+                            }
+
+                            positions_offset += 12;
+                        }
+                    })
+                })
+            });
+    }
+
+    Ok(Response::new(mesh_data))
 }
 
 #[tauri::command]

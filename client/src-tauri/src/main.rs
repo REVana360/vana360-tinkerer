@@ -69,6 +69,7 @@ fn main() {
             commands::load_persistence_data,
             commands::browse_dats,
             commands::get_zones_for_type,
+            commands::get_zone_model,
             commands::get_misc_dats,
             commands::get_standalone_string_dats,
             commands::get_item_dats,

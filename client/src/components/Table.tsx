@@ -1,5 +1,6 @@
 import {
   For,
+  JSX,
   Show,
   createMemo,
   createResource,
@@ -8,12 +9,19 @@ import {
 } from "solid-js";
 import fusejs from "fuse.js";
 
+interface AdditionalColumn<T> {
+  name: string;
+  content: (row: T) => JSX.Element;
+}
+
 interface TableProps<
   T extends { [key in Column]: any },
   Column extends keyof T
 > {
   title: string;
   rowsResourceFetcher: () => Promise<T[]>;
+  headerActions?: JSX.Element[];
+  additionalColumns?: AdditionalColumn<T>[];
   columns: { name: string; key: Column }[];
   defaultSortColumn: Column;
 }
@@ -26,6 +34,8 @@ function Table<
   rowsResourceFetcher,
   columns,
   defaultSortColumn,
+  headerActions,
+  additionalColumns,
 }: TableProps<T, Column>) {
   const [rowsResource] = createResource(rowsResourceFetcher, {
     initialValue: [],
@@ -94,6 +104,8 @@ function Table<
             ref={inputRef!}
             oninput={(e) => setFilterBy(e.target.value ?? "")}
           />
+
+          {headerActions}
         </div>
 
         <Show when={!rowsResource.loading} fallback={<div>Loading...</div>}>
@@ -108,6 +120,10 @@ function Table<
                     {col.name}
                   </th>
                 ))}
+
+                {additionalColumns
+                  ? additionalColumns.map((col) => <th>{col.name}</th>)
+                  : undefined}
               </tr>
             </thead>
 
@@ -119,6 +135,12 @@ function Table<
                       {columns.map((col) => (
                         <td>{row[col.key]}</td>
                       ))}
+
+                      {additionalColumns
+                        ? additionalColumns.map((col) => (
+                            <td>{col.content(row)}</td>
+                          ))
+                        : undefined}
                     </tr>
                   );
                 }}

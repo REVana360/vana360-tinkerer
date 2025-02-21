@@ -60,6 +60,7 @@ impl ByteWalker for FileByteWalker {
 
         let len = self.len();
         if len <= offset {
+            debug_assert!(false, "Out of range");
             return Err(ByteWalkerError::OutOfRange {
                 buffer_length: len,
                 requested_index: offset,

@@ -5,6 +5,7 @@ use dats::{
     base::{DatByZone, ZoneId},
     context::DatContext,
     dat_format::DatFormat,
+    formats::zone_data::zone_model::ZoneCollisionMesh,
     id_mapping::DatIdMapping,
 };
 use processor::dat_descriptor::DatDescriptor;
@@ -82,11 +83,35 @@ pub fn get_global_dialog_dats() -> Vec<DatDescriptor> {
 
 #[derive(Serialize, specta::Type)]
 pub struct ZoneInfo {
-    id: ZoneId,
-    name: String,
+    pub id: ZoneId,
+    pub name: String,
+    pub dat_path: String,
 }
 
-async fn get_zone_ids_from_dats<T: DatFormat + 'static>(
+#[derive(Serialize, specta::Type)]
+pub struct ZoneQueryData {
+    pub mesh_data: Vec<u8>,
+}
+
+pub async fn get_zone_model(
+    dat_descriptor: DatDescriptor,
+    dat_context: Arc<DatContext>,
+) -> Option<ZoneCollisionMesh> {
+    match dat_descriptor {
+        DatDescriptor::ZoneData(zone_id) => {
+            let zone_data_dat = DatIdMapping::get().zone_data.get(&zone_id)?;
+
+            let zone_data = dat_context.get_data_from_dat(zone_data_dat).ok()?;
+
+            let zone_model = ZoneCollisionMesh::parse_from_zone_data(&zone_data.dat).ok()?;
+
+            Some(zone_model.clone())
+        }
+        _ => None,
+    }
+}
+
+async fn get_zone_infos_from_dats<T: DatFormat + 'static>(
     dat_by_zone: &DatByZone<T>,
     dat_context: Arc<DatContext>,
 ) -> Vec<ZoneInfo> {
@@ -102,15 +127,19 @@ async fn get_zone_ids_from_dats<T: DatFormat + 'static>(
                 let zone_name = dat_context
                     .zone_id_to_name
                     .get(&zone_id)
-                    .ok_or(anyhow!("No zone name for ID."))?;
+                    .ok_or(anyhow!("No zone name for ID: {zone_id}."))?;
 
-                if dat_context.check_dat(&dat_id).is_ok() {
-                    Ok::<_, AppError>(ZoneInfo {
+                match dat_context.check_dat(&dat_id) {
+                    Ok(_) => Ok::<_, AppError>(ZoneInfo {
                         id: zone_id.clone(),
                         name: zone_name.display_name.clone(),
-                    })
-                } else {
-                    Err(anyhow!("DAT did not match type."))?
+                        dat_path: dat_id
+                            .get_relative_dat_path(&dat_context)
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                    }),
+                    Err(err) => Err(err.into()),
                 }
             }))
         })
@@ -120,23 +149,32 @@ async fn get_zone_ids_from_dats<T: DatFormat + 'static>(
         .await
         .into_iter()
         .flatten()
-        .filter_map(|res| res.ok())
+        .filter_map(|res| match res {
+            Ok(res) => Some(res),
+            Err(err) => {
+                eprintln!("Failed to load DAT: {err}");
+                None
+            }
+        })
         .collect()
 }
 
-pub async fn get_zone_ids_for_type(
+pub async fn get_zone_infos_for_type(
     dat_descriptor: DatDescriptor,
     dat_context: Arc<DatContext>,
 ) -> Vec<ZoneInfo> {
     match dat_descriptor {
+        DatDescriptor::ZoneData(_) => {
+            get_zone_infos_from_dats(&DatIdMapping::get().zone_data, dat_context).await
+        }
         DatDescriptor::EntityNames(_) => {
-            get_zone_ids_from_dats(&DatIdMapping::get().entities, dat_context).await
+            get_zone_infos_from_dats(&DatIdMapping::get().entities, dat_context).await
         }
         DatDescriptor::Dialog(_) => {
-            get_zone_ids_from_dats(&DatIdMapping::get().dialog, dat_context).await
+            get_zone_infos_from_dats(&DatIdMapping::get().dialog, dat_context).await
         }
         DatDescriptor::Dialog2(_) => {
-            get_zone_ids_from_dats(&DatIdMapping::get().dialog2, dat_context).await
+            get_zone_infos_from_dats(&DatIdMapping::get().dialog2, dat_context).await
         }
         _ => {
             vec![]

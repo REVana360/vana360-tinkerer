@@ -2,6 +2,7 @@ pub mod byte_functions;
 pub mod byte_walker;
 pub mod checking_byte_walker;
 pub mod file_byte_walker;
+pub mod slice_byte_walker;
 pub mod vec_byte_walker;
 pub mod writing_byte_walker;
 

@@ -5,12 +5,14 @@ use crate::{
     formats::{
         dialog::Dialog, dmsg2_string_table::Dmsg2StringTable, dmsg3_string_table::Dmsg3StringTable,
         entity_names::EntityNames, item_info::ItemInfoTable, menu_table::MenuTable,
-        status_info::StatusInfoTable, xistring_table::XiStringTable,
+        status_info::StatusInfoTable, xistring_table::XiStringTable, zone_data::ZoneData,
     },
 };
 
 #[derive(Debug)]
 pub struct DatIdMapping {
+    // Zone data
+    pub zone_data: DatByZone<ZoneData>,
     pub entities: DatByZone<EntityNames>,
     pub dialog: DatByZone<Dialog>,
     pub dialog2: DatByZone<Dialog>,
@@ -79,6 +81,17 @@ static DAT_ID_MAPPING: OnceLock<DatIdMapping> = OnceLock::new();
 impl DatIdMapping {
     pub fn get() -> &'static Self {
         DAT_ID_MAPPING.get_or_init(|| {
+            // Zone data
+            let mut zone_data = DatByZone::default();
+            // Zones 0-255
+            (0..256).into_iter().for_each(|idx| {
+                zone_data.insert(idx, 100 + idx);
+            });
+            // Zones 256-512
+            (0..256).into_iter().for_each(|idx| {
+                zone_data.insert(idx + 256, 83891 + idx);
+            });
+
             // Entities
             let mut entities = DatByZone::default();
             // Zones 1-255
@@ -111,6 +124,7 @@ impl DatIdMapping {
             dialog2.insert(50, 57945);
 
             Self {
+                zone_data,
                 entities,
                 dialog,
                 dialog2,

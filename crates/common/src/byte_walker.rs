@@ -143,6 +143,31 @@ pub trait ByteWalker {
         self.step_le::<T>()
     }
 
+    fn take_str_utf8_nul_end(&mut self, max_len: usize) -> Result<String> {
+        Ok(from_utf8(self.take_bytes(max_len)?)?
+            .chars()
+            .take_while(|c| *c != '\0')
+            .collect::<String>())
+    }
+
+    fn take_str_utf8_space_end(&mut self, max_len: usize) -> Result<String> {
+        Ok(from_utf8(self.take_bytes(max_len)?)?
+            .chars()
+            .take_while(|c| *c != ' ')
+            .collect::<String>())
+    }
+
+    fn expect_offset(&mut self, offset: usize) -> Result<()> {
+        if self.offset() != offset {
+            return Err(anyhow!(
+                "Expected to be at offset {}, but was at {}",
+                offset,
+                self.offset()
+            ));
+        }
+        Ok(())
+    }
+
     fn expect<T: HasByteFunctions + Eq + Display>(&mut self, val: T) -> Result<()> {
         let read_val = self.step_le::<T>()?;
 

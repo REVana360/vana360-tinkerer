@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-pub trait HasByteFunctions: Sized + Eq + std::fmt::Debug {
+pub trait HasByteFunctions: Sized + PartialEq + std::fmt::Debug {
     fn from_be_bytes(bytes: &[u8]) -> Result<Self>;
     fn from_le_bytes(bytes: &[u8]) -> Result<Self>;
     fn insert_into_be(self, bytes: &mut [u8]);
@@ -37,6 +37,8 @@ make_byte_functions!(i16);
 make_byte_functions!(i32);
 make_byte_functions!(i64);
 
+make_byte_functions!(f32);
+
 impl HasByteFunctions for u8 {
     fn from_be_bytes(bytes: &[u8]) -> Result<Self> {
         Ok(bytes[0])
@@ -51,6 +53,6 @@ impl HasByteFunctions for u8 {
     }
 
     fn insert_into_le(self, bytes: &mut [u8]) {
-        bytes[0] = self
+        bytes[0] = self;
     }
 }

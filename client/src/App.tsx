@@ -2,9 +2,10 @@ import Sidebar, { NavItem } from "./components/Sidebar";
 import Statusbar from "./components/Statusbar";
 import Home from "./components/Home";
 import { Routes, Route } from "@solidjs/router";
-import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidPencilSquare, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
-import Table from "./components/Table";
+import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
 import DatTable from "./components/DatTable";
+import Table from "./components/Table";
+import ZoneData from "./components/ZoneData";
 import { commands } from "./bindings";
 import Logs from "./components/Logs";
 import { unwrap } from "./util";
@@ -18,7 +19,7 @@ const navItems: NavItem[] = [
   {
     name: "Browse",
     path: "/browse",
-    icon: <HiSolidCog8Tooth />,
+    icon: <HiSolidMagnifyingGlass />,
   },
   { header: "Strings" },
   {
@@ -33,6 +34,11 @@ const navItems: NavItem[] = [
   },
 
   { header: "By zone" },
+  {
+    name: "Zone Data",
+    path: "/zones",
+    icon: <HiSolidMap />,
+  },
   {
     name: "Entity names",
     path: "/entities",
@@ -65,12 +71,12 @@ const navItems: NavItem[] = [
 
 function App() {
   return (
-    <main class="flex flex-col h-screen">
-      <div class="flex flex-grow overflow-hidden">
+    <main class="h-screen w-screen">
+      <div class="flex flex-row">
         <Sidebar navItems={navItems} />
 
-        <div class="flex flex-grow flex-col">
-          <div class="content flex-grow overflow-y-auto w-full">
+        <div class="flex flex-grow flex-col min-w-0 basis-0">
+          <div class="content flex flex-grow overflow-y-auto">
             <Routes>
               <Route path="/" component={Home}></Route>
 
@@ -137,6 +143,32 @@ function App() {
                   />
                 )}
               ></Route>
+
+              <Route path="/zones">
+                <Route
+                  path="/"
+                  component={() => (
+                    <Table
+                      title="Zones"
+                      rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "ZoneData", index: 0 }))}
+                      columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
+                      defaultSortColumn="name"
+                      additionalColumns={[
+                        {
+                          name: "DAT path",
+                          content: (row) => (<span class="font-mono text-sm">{row.dat_path}</span>)
+                        },
+                        {
+                          name: "View",
+                          content: (row) => (<a href={"/zones/" + row.id} class="text-blue-400 font-semibold">View</a>)
+                        }
+                      ]}
+                    />
+                  )}>
+                </Route>
+
+                <Route path="/:id" component={ZoneData}></Route>
+              </Route>
 
               <Route
                 path="/entities"
