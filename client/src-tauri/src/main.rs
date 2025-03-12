@@ -83,6 +83,14 @@ fn main() {
         .setup(|app| {
             let app_state = RwLock::new(AppStateData::new(app));
             app.manage(app_state);
+
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+                window.close_devtools();
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())
