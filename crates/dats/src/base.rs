@@ -172,7 +172,7 @@ pub enum DatError {
     #[error("Could not find DAT for {0:?}")]
     DatIdNotFound(DatId),
 
-    #[error("Could not DAT location for {0:?}")]
+    #[error("Could not find DAT location for {0:?}")]
     DatMappingNotFound(DatId),
 
     #[error("Failed to load data for {0:?}: {1}")]
