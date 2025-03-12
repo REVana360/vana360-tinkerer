@@ -77,6 +77,7 @@ pub enum DatDescriptor {
     EntityNames(ZoneId),
     Dialog(ZoneId),
     Dialog2(ZoneId),
+    Events(ZoneId),
 }
 
 pub trait DatUsage {
@@ -196,6 +197,9 @@ impl DatDescriptor {
             DatDescriptor::Dialog2(zone_id) => {
                 Self::get_zoned_file_name(dat_context, "dialog2", zone_id)
             }
+            DatDescriptor::Events(zone_id) => {
+                Self::get_zoned_file_name(dat_context, "events", zone_id)
+            }
         }
     }
 
@@ -228,6 +232,7 @@ impl DatDescriptor {
                 }
                 "dialog" => Self::get_zone_id(file_name, dat_context).map(DatDescriptor::Dialog),
                 "dialog2" => Self::get_zone_id(file_name, dat_context).map(DatDescriptor::Dialog2),
+                "events" => Self::get_zone_id(file_name, dat_context).map(DatDescriptor::Events),
 
                 "items" => match file_name {
                     "armor" => Some(DatDescriptor::Armor),
@@ -430,6 +435,9 @@ impl DatDescriptor {
             }
             DatDescriptor::Dialog2(zone_id) => {
                 converter.use_dat(DatIdMapping::get().dialog.get_result(&zone_id)?.clone())
+            }
+            DatDescriptor::Events(zone_id) => {
+                converter.use_dat(DatIdMapping::get().events.get_result(&zone_id)?.clone())
             }
         }
     }

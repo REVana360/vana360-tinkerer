@@ -176,6 +176,9 @@ pub async fn get_zone_infos_for_type(
         DatDescriptor::Dialog2(_) => {
             get_zone_infos_from_dats(&DatIdMapping::get().dialog2, dat_context).await
         }
+        DatDescriptor::Events(_) => {
+            get_zone_infos_from_dats(&DatIdMapping::get().events, dat_context).await
+        }
         _ => {
             vec![]
         }

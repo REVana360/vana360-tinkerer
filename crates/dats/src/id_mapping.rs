@@ -4,7 +4,7 @@ use crate::{
     base::{Dat, DatByZone},
     formats::{
         dialog::Dialog, dmsg2_string_table::Dmsg2StringTable, dmsg3_string_table::Dmsg3StringTable,
-        entity_names::EntityNames, item_info::ItemInfoTable, menu_table::MenuTable,
+        entity_names::EntityNames, events::Events, item_info::ItemInfoTable, menu_table::MenuTable,
         status_info::StatusInfoTable, xistring_table::XiStringTable, zone_data::ZoneData,
     },
 };
@@ -16,6 +16,7 @@ pub struct DatIdMapping {
     pub entities: DatByZone<EntityNames>,
     pub dialog: DatByZone<Dialog>,
     pub dialog2: DatByZone<Dialog>,
+    pub events: DatByZone<Events>,
 
     // Global dialog
     pub monster_skill_names: Dat<Dialog>,
@@ -118,6 +119,17 @@ impl DatIdMapping {
                 dialog.insert(idx + 256, 85590 + idx);
             });
 
+            // Events
+            // Zones 0-255
+            let mut events = DatByZone::default();
+            (0..256).into_iter().for_each(|idx| {
+                events.insert(idx, 5820 + idx);
+            });
+            // Zones 256-512
+            (0..256).into_iter().for_each(|idx| {
+                events.insert(idx + 256, 84991 + idx);
+            });
+
             // Secondary dialog text
             let mut dialog2 = DatByZone::default();
             // Just whitegate?
@@ -128,6 +140,7 @@ impl DatIdMapping {
                 entities,
                 dialog,
                 dialog2,
+                events,
 
                 // Global dialog
                 monster_skill_names: 07035.into(),

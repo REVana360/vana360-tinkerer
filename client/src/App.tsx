@@ -2,7 +2,7 @@ import Sidebar, { NavItem } from "./components/Sidebar";
 import Statusbar from "./components/Statusbar";
 import Home from "./components/Home";
 import { Routes, Route } from "@solidjs/router";
-import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
+import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidPlayCircle, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
 import DatTable from "./components/DatTable";
 import Table from "./components/Table";
 import ZoneData from "./components/ZoneData";
@@ -35,11 +35,6 @@ const navItems: NavItem[] = [
 
   { header: "By zone" },
   {
-    name: "Zone Data",
-    path: "/zones",
-    icon: <HiSolidMap />,
-  },
-  {
     name: "Entity names",
     path: "/entities",
     icon: <HiSolidUser />,
@@ -53,6 +48,16 @@ const navItems: NavItem[] = [
     name: "Dialog (2)",
     path: "/dialog2",
     icon: <HiSolidChatBubbleLeftRight />,
+  },
+  {
+    name: "Events",
+    path: "/events",
+    icon: <HiSolidPlayCircle />,
+  },
+  {
+    name: "Zone Data",
+    path: "/zones",
+    icon: <HiSolidMap />,
   },
 
   { header: "Other" },
@@ -205,6 +210,19 @@ function App() {
                     columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
                     defaultSortColumn="name"
                     toDatDescriptor={(zone) => ({ type: "Dialog2", index: zone.id })}
+                  />
+                )}
+              ></Route>
+
+              <Route
+                path="/events"
+                component={() => (
+                  <DatTable
+                    title="Events"
+                    rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "Events", index: 0 }))}
+                    columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
+                    defaultSortColumn="name"
+                    toDatDescriptor={(zone) => ({ type: "Events", index: zone.id })}
                   />
                 )}
               ></Route>
