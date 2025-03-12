@@ -2,12 +2,12 @@ import {
   For,
   JSX,
   Show,
+  batch,
   createMemo,
   createResource,
   createSignal,
   onMount,
 } from "solid-js";
-import fusejs from "fuse.js";
 
 interface AdditionalColumn<T> {
   name: string;
@@ -49,42 +49,42 @@ function Table<
     if (column == sortBy()) {
       setSortAsc(!sortAsc());
     } else {
-      setSortBy(column as any);
-      setSortAsc(true);
+      batch(() =>{
+        setSortBy(column as any);
+        setSortAsc(true);
+      })
     }
   };
 
-  const fuseIndex = createMemo(() => {
-    return new fusejs(rowsResource(), {
-      keys: columns.map((col) => col.key),
-      threshold: 0.3,
-    });
-  });
-
-  const rows = () => {
-    let sortedRows;
+  const filteredRows = createMemo(() => {
     if (filterBy()) {
-      sortedRows = fuseIndex()
-        .search(filterBy())
-        .map((e) => e.item);
+      const filterVal = filterBy();
+      return rowsResource()
+        .filter((e) => {
+          return columns.find(c => {
+            return ("" + e[c.key]).includes(filterVal);
+        })
+        });
     } else {
-      sortedRows = [...rowsResource()];
+      return [...(rowsResource())];
     }
+  })
 
-    sortedRows.sort((a, b) => {
-      const aValue = a[sortBy()];
-      const bValue = b[sortBy()];
-      const dir = sortAsc() ? 1 : -1;
+  const rows = createMemo(() => {
+    const sortByVal = sortBy();
+    const sortAscVal = sortAsc();
+    return filteredRows().sort((a, b) => {
+      const aValue = a[sortByVal];
+      const bValue = b[sortByVal];
+      const dir = sortAscVal ? 1 : -1;
       if (aValue < bValue) {
         return -1 * dir;
       } else if (aValue > bValue) {
         return 1 * dir;
       }
       return 0;
-    });
-
-    return sortedRows;
-  };
+    }).slice(0, 1000);
+  });
 
   let inputRef: HTMLInputElement;
   onMount(() => {
@@ -96,7 +96,7 @@ function Table<
       <h1>{title}</h1>
       <hr />
 
-      <div class="w-full h-screen">
+      <div class="w-full">
         <div class="flex flex-row space-x-5">
           <input
             class="mt-3"
