@@ -26,7 +26,7 @@ It is planned to eventually support handling of most DAT-related things, like:
     - [ ] Spell info
     - [ ] Ability info
     - [ ] Quest info
-    - [ ] Events/cutscenes (likely based on info from [XiEvents](https://github.com/atom0s/XiEvents))
+    - [x] Events/cutscenes (byte code and data)
 - [ ] GUI editor for complex DATs, i.e.:
     - [ ] Items
     - [ ] DATs with images
@@ -79,3 +79,8 @@ so credit goes to them for their work in reversing these. Their work is licensed
 This project also uses encoding conversion table files, which were originally from the POLUtils project,
 but some have been modified to allow them being used in reverse to allow encoding back to the original symbols.
 The full license file and copyright text have been included in the folder that these reside in.
+
+
+### Events
+
+Decoding of events and the byte code is done based on [XiEvents](https://github.com/atom0s/XiEvents) by atom0s. The license associated with the repository [can be found here](https://github.com/atom0s/XiEvents/blob/main/LICENSE.md), which is currently AGPL.
