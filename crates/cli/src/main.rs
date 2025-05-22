@@ -1,3 +1,4 @@
+mod analyze_meshes;
 mod export_dat;
 mod export_ximesh;
 mod make_dats;
@@ -6,6 +7,7 @@ mod util;
 
 use std::path::PathBuf;
 
+use analyze_meshes::analyze_zone_meshes;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -30,6 +32,11 @@ enum Commands {
 
         #[arg(value_name = "OUT_DIR")]
         out_dir: Option<String>,
+    },
+
+    AnalyzeZoneMesh {
+        #[arg(value_name = "FFXI_PATH")]
+        ffxi_path: String,
     },
 
     MakeDats {
@@ -74,6 +81,9 @@ async fn main() -> Result<()> {
                 PathBuf::from(out_dir.unwrap_or(".".to_string())),
             )
             .await?;
+        }
+        Commands::AnalyzeZoneMesh { ffxi_path } => {
+            analyze_zone_meshes(PathBuf::from(ffxi_path)).await?;
         }
         Commands::MakeDats {
             project_dir,

@@ -4,41 +4,44 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::serde_hex;
 
-use super::{ChunkData, ZoneData, collision_mesh::CollisionMesh};
+use super::{ChunkData, ZoneData, grid_mesh::GridMesh};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct ZoneCollisionMesh {
+pub struct ZoneMesh {
     pub data_len: u32,
 
     pub len_and_type: u32,
     pub node_count_and_unk: u32,
-    pub mesh_offset: u32,
+    pub mesh_header_offset: u32,
 
     pub grid_width: u16,
     pub grid_height: u16,
-    pub bucket_width: u8,
-    pub bucket_height: u8,
+    pub cell_width: u8,
+    pub cell_height: u8,
 
-    pub quadtree_offset: u32,
-    pub objects_end_offset: u32,
-    pub shortname_offset: u32,
+    pub unk_coll1_offset: u32,
+    pub unk_coll2_end_offset: u32,
+    pub unk_coll3_offset: u32,
+
+    pub flags1: u32,
+    pub flags: [u32; 4],
 
     #[serde(with = "serde_hex")]
-    pub unknown_data: Vec<u8>,
+    pub misc_data: Vec<u8>,
 
-    pub mesh_model_count: u32,
-    pub mesh_model_data: u32,
-    pub mesh_grid_bucket_lists_count: u32,
-    pub mesh_grid_bucket_lists: u32,
+    pub blocks_count: u32,
+    pub blocks_offset: u32,
+    pub unk_coll4_count: u32,
+    pub unk_coll4_offset: u32,
     pub grid_offset: u32,
-    pub map_id_list_offset: u32,
-    pub map_id_list_count: u32,
+    pub placements_offset: u32,
+    pub placements_count: u32,
 
-    pub collision_mesh: CollisionMesh,
+    pub mesh: GridMesh,
 }
 
-impl ZoneCollisionMesh {
-    pub fn parse_from_zone_data(zone_data: &ZoneData) -> Result<&ZoneCollisionMesh> {
+impl ZoneMesh {
+    pub fn parse_from_zone_data(zone_data: &ZoneData) -> Result<&ZoneMesh> {
         zone_data
             .chunks
             .iter()
@@ -49,86 +52,114 @@ impl ZoneCollisionMesh {
             .ok_or_else(|| anyhow!("No zone model found in zone data."))
     }
 
-    pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<ZoneCollisionMesh> {
+    pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<ZoneMesh> {
         let data_len = walker.len() as u32;
 
         let len_and_type = walker.step::<u32>()?; // 0x00
         let node_count_and_unk = walker.step::<u32>()?; // 0x04
-        let mesh_offset = walker.step::<u32>()?; // 0x08
+        let mesh_header_offset = walker.step::<u32>()?; // 0x08
 
-        if data_len <= mesh_offset {
+        if data_len <= mesh_header_offset {
             return Err(anyhow!(
-                "Invalid mesh offset found: {mesh_offset}, expecting less than {data_len}"
+                "Invalid mesh offset found: {mesh_header_offset}, expecting less than {data_len}"
             ));
         }
 
-        let grid_width = walker.step::<u8>()? as u16 * 10; // 0x0C
-        let grid_height = walker.step::<u8>()? as u16 * 10; // 0x0D
-        let bucket_width = walker.step::<u8>()?; // 0x0E
-        let bucket_height = walker.step::<u8>()?; // 0x0F
+        let num_cells_width = walker.step::<u8>()?; // 0x0C
+        let num_cells_height = walker.step::<u8>()?; // 0x0D
+        let cell_width = walker.step::<u8>()?; // 0x0E
+        let cell_height = walker.step::<u8>()?; // 0x0F
 
-        let quadtree_offset = walker.step::<u32>()?; // 0x10
+        let temp_width = num_cells_width as i64 * cell_width as i64;
+        let temp_height = num_cells_height as i64 * cell_height as i64;
 
-        let objects_start_offset = 0x20;
-        let objects_end_offset = walker.step::<u32>()?; // 0x14
-        let _objects_count = (objects_end_offset.saturating_sub(objects_start_offset)) / 0x64;
+        let grid_width = ((temp_width + (temp_width >> 31 & 3)) >> 2) as u16;
+        let grid_height = ((temp_height + (temp_height >> 31 & 3)) >> 2) as u16;
 
-        let shortname_offset = walker.step::<u32>()?; // 0x18
-        let _shortname_count = (mesh_offset.saturating_sub(shortname_offset)) / 0x4C;
+        let unk_coll1_offset = walker.step::<u32>()?; // 0x10
 
-        // 0x1C
-        if (mesh_offset as usize) < walker.offset() {
+        let unk_coll2_offset = 0x20;
+        let unk_coll2_end_offset = walker.step::<u32>()?; // 0x14
+        let _unk_coll2_count = (unk_coll2_end_offset.saturating_sub(unk_coll2_offset)) / 0x64;
+
+        let unk_coll3_offset = walker.step::<u32>()?; // 0x18
+        let _unk_coll3_count = (mesh_header_offset.saturating_sub(unk_coll3_offset)) / 0x4C;
+
+        let flags1 = walker.step::<u32>()?; // 0x1C
+
+        let mut flags = [0u32; 4];
+        flags[0] = walker.step::<u32>()?;
+        flags[1] = walker.step::<u32>()?;
+        flags[2] = walker.step::<u32>()?;
+        flags[3] = walker.step::<u32>()?;
+
+        if (mesh_header_offset as usize) < walker.offset() {
             return Err(anyhow!(
-                "Invalid mesh offset found: {mesh_offset}, expected greater than {}",
+                "Invalid mesh header offset found: {mesh_header_offset}, expected greater than {}",
                 walker.offset()
             ));
         }
-        let unknown_data = walker
-            .take_bytes(mesh_offset as usize - walker.offset())?
+
+        let misc_data = walker
+            .take_bytes(mesh_header_offset as usize - walker.offset())?
             .to_vec();
 
-        let mesh_model_count = walker.step::<u32>()?;
-        let mesh_model_data = walker.step::<u32>()?;
+        let blocks_count = walker.step::<u32>()?;
+        let blocks_offset = walker.step::<u32>()?;
 
-        let mesh_grid_bucket_lists_count = walker.step::<u32>()?;
-        let mesh_grid_bucket_lists = walker.step::<u32>()?;
+        let unk_coll4_count = walker.step::<u32>()?;
+        let unk_coll4_offset = walker.step::<u32>()?;
+
         let grid_offset = walker.step::<u32>()?;
 
-        let map_id_list_offset = walker.step::<u32>()?;
-        let map_id_list_count = walker.step::<u32>()?;
+        let placements_offset = walker.step::<u32>()?;
+        let placements_count = walker.step::<u32>()?;
+
+        let _placement_entry_size: usize = if walker.read_at::<u8>(3).unwrap_or_default() < 0x1A {
+            0x80
+        } else {
+            0xC0
+        };
 
         // Likely skipping some stuff here
 
-        let collision_mesh = CollisionMesh::parse(walker, grid_offset, grid_height, grid_width)?;
+        let mesh = GridMesh::parse(walker, grid_offset, grid_height, grid_width)?;
 
-        Ok(ZoneCollisionMesh {
+        Ok(ZoneMesh {
             data_len,
 
             len_and_type,
             node_count_and_unk,
-            mesh_offset,
+            mesh_header_offset,
 
             grid_width,
             grid_height,
-            bucket_width,
-            bucket_height,
+            cell_width,
+            cell_height,
 
-            quadtree_offset,
-            objects_end_offset,
-            shortname_offset,
+            unk_coll1_offset,
+            unk_coll2_end_offset,
+            unk_coll3_offset,
 
-            unknown_data,
+            flags1,
+            flags,
 
-            mesh_model_count,
-            mesh_model_data,
-            mesh_grid_bucket_lists_count,
-            mesh_grid_bucket_lists,
+            misc_data,
+
+            blocks_count,
+            blocks_offset,
+            unk_coll4_count,
+            unk_coll4_offset,
             grid_offset,
-            map_id_list_offset,
-            map_id_list_count,
+            placements_offset,
+            placements_count,
 
-            collision_mesh,
+            mesh,
         })
+    }
+
+    pub fn wide_grid_search(&self) -> bool {
+        (self.flags1.to_le_bytes()[1] >> 3 & 1) > 0
     }
 }
 
@@ -138,20 +169,22 @@ mod tests {
 
     use crate::{dat_format::DatFormat, formats::zone_data::ZoneData};
 
-    use super::ZoneCollisionMesh;
+    use super::ZoneMesh;
 
     #[test]
     pub fn zone_model() {
         let resources_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-        let names: [&str; 2] = ["Pashhow_Marshlands", "Yughott_Grotto"];
+        // let names: &[&str] = &["Pashhow_Marshlands", "Yughott_Grotto"];
+        // let names: &[&str] = &["Korroloka_Tunnel"];
+        let names: &[&str] = &["Sea_Serpent_Grotto"];
 
         for name in names {
             let mut path = resources_path.clone();
             path.push(format!("resources/test/zone_data_{name}.DAT"));
 
             let data = ZoneData::from_path(&path).unwrap();
-            let _res = ZoneCollisionMesh::parse_from_zone_data(&data).unwrap();
+            let _res = ZoneMesh::parse_from_zone_data(&data).unwrap();
 
             // let file = File::create(format!("{name}.yml")).unwrap();
             // serde_yaml::to_writer(BufWriter::new(file), &res).unwrap();

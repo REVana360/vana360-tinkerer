@@ -44,6 +44,7 @@ fn main() {
             commands::get_item_dats,
             commands::get_global_dialog_dats,
             commands::browse_dats,
+            commands::get_triangle_metadata,
             commands::get_zones_for_type,
             commands::get_working_files,
             commands::make_all_dats,
@@ -61,6 +62,7 @@ fn main() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
@@ -72,6 +74,7 @@ fn main() {
             commands::browse_dats,
             commands::get_zones_for_type,
             commands::get_zone_model,
+            commands::get_triangle_metadata,
             commands::get_misc_dats,
             commands::get_standalone_string_dats,
             commands::get_mission_dats,

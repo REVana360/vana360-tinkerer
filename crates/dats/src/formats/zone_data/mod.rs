@@ -1,4 +1,6 @@
-pub mod collision_mesh;
+pub mod grid_mesh;
+pub mod mesh_block;
+pub mod mesh_placement;
 pub mod zone_mmb;
 pub mod zone_model;
 
@@ -9,7 +11,7 @@ use common::{
 use encoding::chunk_key_tables::KEY_TABLE_1;
 use serde_derive::{Deserialize, Serialize};
 use zone_mmb::ZoneMmb;
-use zone_model::ZoneCollisionMesh;
+use zone_model::ZoneMesh;
 
 use crate::{dat_format::DatFormat, serde_hex, serde_hex_num};
 
@@ -41,7 +43,7 @@ pub enum ChunkData {
         zone_mmb: ZoneMmb,
     },
     ZoneModel {
-        zone_model: ZoneCollisionMesh,
+        zone_model: ZoneMesh,
     },
     Unknown {
         #[serde(with = "serde_hex")]
@@ -59,6 +61,24 @@ impl ZoneData {
         }
 
         Ok(ZoneData { chunks })
+    }
+
+    pub fn check<T: ByteWalker>(walker: &mut T) -> Result<()> {
+        while walker.remaining() > 0 {
+            let _four_char_code = walker.take_bytes(4)?;
+
+            let type_and_length = walker.step::<u32>()? & 0xFFFFFFF;
+            let _unknown_0x08 = walker.step::<u32>()?;
+            let _unknown_0x12 = walker.step::<u32>()?;
+
+            let length = (((type_and_length >> 7) & 0x7FFFF) << 4)
+                .checked_sub(0x10)
+                .ok_or_else(|| anyhow!("Invalid chunk data."))?;
+
+            walker.take_bytes(length as usize)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -99,7 +119,7 @@ impl ChunkData {
             // MZB
             0x1C => {
                 Self::decode_1b(data.to_vec())
-                    .and_then(|decoded| ZoneCollisionMesh::parse(&mut VecByteWalker::on(decoded)))
+                    .and_then(|decoded| ZoneMesh::parse(&mut VecByteWalker::on(decoded)))
                     .map(|zone_model| ChunkData::ZoneModel { zone_model })
                     .or_else(|_err|  Ok(ChunkData::Unknown { data: data.into() }))
             }
@@ -127,7 +147,7 @@ impl ChunkData {
     }
 
     fn decode_1b(data: Vec<u8>) -> Result<Vec<u8>> {
-        if data[3] != 0x1B {
+        if data[3] <= 0x1A {
             return Ok(data);
         }
 
@@ -244,7 +264,7 @@ impl DatFormat for ZoneData {
     }
 
     fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
-        ZoneData::parse(walker)?;
+        ZoneData::check(walker)?;
         Ok(())
     }
 }

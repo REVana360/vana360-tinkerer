@@ -49,7 +49,7 @@ function Table<
     if (column == sortBy()) {
       setSortAsc(!sortAsc());
     } else {
-      batch(() =>{
+      batch(() => {
         setSortBy(column as any);
         setSortAsc(true);
       })
@@ -62,8 +62,8 @@ function Table<
       return rowsResource()
         .filter((e) => {
           return columns.find(c => {
-            return ("" + e[c.key]).includes(filterVal);
-        })
+            return ("" + e[c.key]).toLowerCase().includes(filterVal.toLowerCase());
+          })
         });
     } else {
       return [...(rowsResource())];
@@ -138,8 +138,8 @@ function Table<
 
                       {additionalColumns
                         ? additionalColumns.map((col) => (
-                            <td>{col.content(row)}</td>
-                          ))
+                          <td>{col.content(row)}</td>
+                        ))
                         : undefined}
                     </tr>
                   );

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     ffi::OsStr,
     path::PathBuf,
     sync::{Arc, mpsc},
@@ -6,7 +7,10 @@ use std::{
 };
 
 use anyhow::Result;
-use dats::{context::DatContext, id_mapping::DatWithLang};
+use dats::{
+    formats::zone_data::zone_model::ZoneMesh,
+    {base::ZoneId, context::DatContext, id_mapping::DatWithLang},
+};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
 use processor::{dat_yaml_util::DatYamlUtil, processor::DatProcessor};
@@ -20,6 +24,7 @@ pub struct AppStateData {
     pub project_path: Option<PathBuf>,
     pub dat_context: Option<Arc<DatContext>>,
     pub processor: Arc<DatProcessor>,
+    pub cached_zones: HashMap<ZoneId, ZoneMesh>,
     pub persistence: PersistenceData,
     watcher: RecommendedWatcher,
     local_data_dir: PathBuf,
@@ -70,6 +75,7 @@ impl AppStateData {
             dat_context,
             project_path,
             persistence,
+            cached_zones: Default::default(),
             watcher,
             processor,
             local_data_dir,

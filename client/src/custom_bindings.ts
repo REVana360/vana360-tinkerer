@@ -1,4 +1,4 @@
-import { DatDescriptor, Result } from './bindings'
+import { Result } from './bindings'
 import { invoke as TAURI_INVOKE } from "@tauri-apps/api/core";
 declare global {
     interface Window {
@@ -6,9 +6,9 @@ declare global {
     }
 }
 
-export async function getZoneModel(datDescriptor: DatDescriptor) : Promise<Result<ZoneData, any>> {
+export async function getZoneModel(zoneId: number) : Promise<Result<any, any>> {
     try {
-        return { status: "ok", data: await TAURI_INVOKE("get_zone_model", { datDescriptor }) };
+        return { status: "ok", data: await TAURI_INVOKE("get_zone_model", { zoneId }) };
     } catch (e) {
         if(e instanceof Error) throw e;
         else return { status: "error", error: e  as any };

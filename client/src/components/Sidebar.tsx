@@ -6,7 +6,7 @@ import { useData } from "../store";
 export interface NavItemLink {
   name: string;
   path: string;
-  icon?: JSXElement;
+  icon?: () => JSXElement;
 }
 
 export interface NavItemHeader {
@@ -33,7 +33,7 @@ function SidebarButton(props: { navItem: NavItem, classExt?: string }) {
       end={true}
       href={props.navItem.path}
     >
-      {props.navItem.icon ?? <HiSolidCube />}
+      {props.navItem.icon?.() ?? <HiSolidCube />}
       {props.navItem.name}
     </A>
   );
@@ -59,8 +59,9 @@ function Sidebar(props: { navItems: NavItem[] }) {
         <SidebarButton navItem={{
           name: "Logs",
           path: "/logs",
-          icon: <HiOutlineDocumentText />
+          icon: () => <HiOutlineDocumentText />
         }} />
+
         <div class="text-center italic" style={{ height: "1rem" }}>
           {totalProcessingCount() == 0 ? "" :
             <div>

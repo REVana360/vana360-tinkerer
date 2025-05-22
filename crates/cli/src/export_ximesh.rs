@@ -2,14 +2,27 @@ use std::{io::Write, path::PathBuf};
 
 use anyhow::{Context, Result, anyhow};
 use dats::{
-    context::DatContext, formats::zone_data::zone_model::ZoneCollisionMesh,
-    id_mapping::DatIdMapping,
+    context::DatContext, formats::zone_data::zone_model::ZoneMesh, id_mapping::DatIdMapping,
 };
 use flate2::{Compression, write::ZlibEncoder};
 use processor::ximesh::get_ximesh_bytes;
 use tokio::{fs, task::JoinSet};
 
-use crate::util::get_zone_ids_from_dats;
+use crate::util::{ZoneInfo, get_zone_ids_from_dats};
+
+pub fn get_ximesh_filename(zone_info: &ZoneInfo) -> String {
+    println!("{}", zone_info.name);
+    format!(
+        "{}.ximesh",
+        zone_info
+            .name
+            .replace(" - ", "-")
+            .replace(" ", "_")
+            .replace("'", "")
+            .replace("(", "")
+            .replace(")", "")
+    )
+}
 
 pub async fn export_zone_meshes(ffxi_path: PathBuf, mut out_dir: PathBuf) -> Result<()> {
     let dat_context = DatContext::from_ffxi_path(ffxi_path)?;
@@ -25,10 +38,9 @@ pub async fn export_zone_meshes(ffxi_path: PathBuf, mut out_dir: PathBuf) -> Res
         let dat_context = dat_context.clone();
 
         let mut out_path = out_dir.clone();
-        out_path.push(format!("{}.ximesh", zone_info.id));
+        out_path.push(get_ximesh_filename(&zone_info));
 
         join_set.spawn(async move {
-            eprintln!("Parsing \"{}\": \"{}\"", zone_info.id, zone_info.name);
             let zone_data_dat = DatIdMapping::get()
                 .zone_data
                 .get(&zone_info.id)
@@ -43,13 +55,12 @@ pub async fn export_zone_meshes(ffxi_path: PathBuf, mut out_dir: PathBuf) -> Res
                     )
                 })?;
 
-            let zone_model =
-                ZoneCollisionMesh::parse_from_zone_data(&zone_data.dat).with_context(|| {
-                    format!(
-                        "Failed to parse data for \"{}\" ({})",
-                        zone_info.name, zone_info.id
-                    )
-                })?;
+            let zone_model = ZoneMesh::parse_from_zone_data(&zone_data.dat).with_context(|| {
+                format!(
+                    "Failed to parse data for \"{}\" ({})",
+                    zone_info.name, zone_info.id
+                )
+            })?;
 
             let mesh_data = get_ximesh_bytes(zone_model);
 
@@ -65,7 +76,7 @@ pub async fn export_zone_meshes(ffxi_path: PathBuf, mut out_dir: PathBuf) -> Res
         match res {
             Ok(Ok(_)) => {}
             Ok(Err(err)) => {
-                eprintln!("Parse error: {err:?}");
+                eprintln!("Parse error: {}", err);
             }
             Err(err) => {
                 eprintln!("Join error: {err:?}");

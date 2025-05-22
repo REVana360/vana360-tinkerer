@@ -5,7 +5,7 @@ use dats::{
     base::{DatByZone, ZoneId},
     context::DatContext,
     dat_format::DatFormat,
-    formats::zone_data::zone_model::ZoneCollisionMesh,
+    formats::zone_data::zone_model::ZoneMesh,
     id_mapping::{DatDescriptor, DatIdMapping},
 };
 use serde::{Deserialize, Serialize};
@@ -177,22 +177,59 @@ pub struct ZoneQueryData {
     pub mesh_data: Vec<u8>,
 }
 
-pub async fn get_zone_model(
-    dat_descriptor: DatDescriptor,
-    dat_context: Arc<DatContext>,
-) -> Option<ZoneCollisionMesh> {
-    match dat_descriptor {
-        DatDescriptor::ZoneData(zone_id) => {
-            let zone_data_dat = DatIdMapping::get().zone_data.get(&zone_id)?;
+#[derive(Serialize, specta::Type)]
+pub struct ZoneTriangleInfo {
+    pub o2w: [[f32; 3]; 4],
+    pub o2w_opts: [[u16; 2]; 4],
+    pub w2o: [[f32; 3]; 4],
+    pub w2o_opts: [[u16; 2]; 4],
+    pub unk_floats: [f32; 9],
+    pub data_field_1: u32,
+    pub data_field_2: u32,
+    pub unk_bytes: [u8; 4],
+    pub unk_1: u32,
+    pub min_y: f32,
+    pub max_y: f32,
+    pub unk_2: u32,
+}
 
-            let zone_data = dat_context.get_data_from_dat(zone_data_dat).ok()?;
+#[derive(Serialize, specta::Type)]
+pub struct TriangleMetadata {
+    // Triangle-specific
+    pub grid_entry_idx: u32,
+    pub mesh_entry_idx: u32,
+    pub material: u8,
+    pub is_invalid_triangle: bool,
+    pub is_barrier: bool,
 
-            let zone_model = ZoneCollisionMesh::parse_from_zone_data(&zone_data.dat).ok()?;
+    // Placement
+    pub o2w: [[f32; 3]; 4],
+    pub o2w_opts: [[u16; 2]; 4],
+    pub w2o: [[f32; 3]; 4],
+    pub w2o_opts: [[u16; 2]; 4],
+    pub unk_floats: [f32; 9],
+    pub data_field_1: u32,
+    pub data_field_2: u32,
+    pub unk_bytes: [u8; 4],
+    pub unk_1: u32,
+    pub min_y: f32,
+    pub max_y: f32,
+    pub unk_2: u32,
 
-            Some(zone_model.clone())
-        }
-        _ => None,
-    }
+    pub map_id: u8,
+
+    // Block
+    pub block_flags: u16,
+}
+
+pub async fn get_zone_model(zone_id: ZoneId, dat_context: Arc<DatContext>) -> Option<ZoneMesh> {
+    let zone_data_dat = DatIdMapping::get().zone_data.get(&zone_id)?;
+
+    let zone_data = dat_context.get_data_from_dat(zone_data_dat).ok()?;
+
+    let zone_model = ZoneMesh::parse_from_zone_data(&zone_data.dat).ok()?;
+
+    Some(zone_model.clone())
 }
 
 async fn get_zone_infos_from_dats<T: DatFormat + 'static>(

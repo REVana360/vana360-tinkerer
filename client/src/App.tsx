@@ -14,72 +14,72 @@ const navItems: NavItem[] = [
   {
     name: "Home",
     path: "/",
-    icon: <HiSolidCog8Tooth />,
+    icon: () => <HiSolidCog8Tooth />,
   },
   {
     name: "Browse",
     path: "/browse",
-    icon: <HiSolidMagnifyingGlass />,
+    icon: () => <HiSolidMagnifyingGlass />,
   },
   { header: "Strings" },
   {
     name: "String tables",
     path: "/strings",
-    icon: <HiSolidPencilSquare />,
+    icon: () => <HiSolidPencilSquare />,
   },
   {
     name: "Global dialog",
     path: "/global_dialog",
-    icon: <HiSolidChatBubbleLeftRight />,
+    icon: () => <HiSolidChatBubbleLeftRight />,
   },
   {
     name: "Missions",
     path: "/missions",
-    icon: <HiSolidDocumentText />,
+    icon: () => <HiSolidDocumentText />,
   },
   {
     name: "Quests",
     path: "/quests",
-    icon: <HiSolidDocumentText />,
+    icon: () => <HiSolidDocumentText />,
   },
 
   { header: "By zone" },
   {
     name: "Entity names",
     path: "/entities",
-    icon: <HiSolidUser />,
+    icon: () => <HiSolidUser />,
   },
   {
     name: "Dialog",
     path: "/dialog",
-    icon: <HiSolidChatBubbleLeftRight />,
+    icon: () => <HiSolidChatBubbleLeftRight />,
   },
   {
     name: "Dialog (2)",
     path: "/dialog2",
-    icon: <HiSolidChatBubbleLeftRight />,
+    icon: () => <HiSolidChatBubbleLeftRight />,
   },
   {
     name: "Events",
     path: "/events",
-    icon: <HiSolidPlayCircle />,
+    icon: () => <HiSolidPlayCircle />,
   },
   {
     name: "Zone Data",
     path: "/zones",
-    icon: <HiSolidMap />,
+    icon: () => <HiSolidMap />,
   },
 
   { header: "Other" },
   {
     name: "Items",
     path: "/items",
-    icon: <HiSolidShoppingBag />,
+    icon: () => <HiSolidShoppingBag />,
   },
   {
     name: "Misc.",
     path: "/misc",
-    icon: <HiSolidAdjustmentsHorizontal />,
+    icon: () => <HiSolidAdjustmentsHorizontal />,
   },
 
 ];

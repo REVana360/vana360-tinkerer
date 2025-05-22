@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
+use dats::base::ZoneId;
 use dats::id_mapping::{DatDescriptor, DatLanguage, DatWithLang};
 use processor::{
     dat_yaml_util::DatYamlUtil, processor::DatProcessorMessage, ximesh::get_ximesh_bytes,
@@ -14,7 +15,7 @@ use tracing_subscriber::fmt::MakeWriter;
 use crate::{
     DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE,
     app_persistence::PersistenceData,
-    dat_query::{self, BrowseInfo, DatDescriptorInfo, ZoneInfo},
+    dat_query::{self, BrowseInfo, DatDescriptorInfo, TriangleMetadata, ZoneInfo},
     errors::AppError,
     state::{AppState, FileNotification},
 };
@@ -72,20 +73,23 @@ pub async fn get_zones_for_type(
 }
 
 #[tauri::command]
-pub async fn get_zone_model(
-    dat_descriptor: DatDescriptor,
-    state: AppState<'_>,
-) -> Result<Response, AppError> {
+pub async fn get_zone_model(zone_id: ZoneId, state: AppState<'_>) -> Result<Response, AppError> {
+    if let Some(model) = state.read().cached_zones.get(&zone_id) {
+        let mesh_data = get_ximesh_bytes(&model);
+        return Ok(Response::new(mesh_data));
+    }
+
     let dat_context = state
         .read()
         .dat_context
         .clone()
         .ok_or(anyhow!("No DAT context."))?;
 
-    let zone_model = dat_query::get_zone_model(dat_descriptor, dat_context).await;
+    let zone_model = dat_query::get_zone_model(zone_id, dat_context).await;
     match zone_model {
         Some(model) => {
             let mesh_data = get_ximesh_bytes(&model);
+            state.write().cached_zones.insert(zone_id, model);
             return Ok(Response::new(mesh_data));
         }
         None => {
@@ -98,6 +102,61 @@ pub async fn get_zone_model(
 #[specta::specta]
 pub async fn get_misc_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
     Ok(dat_query::MISC_DATS)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_triangle_metadata(
+    zone_id: ZoneId,
+    grid_entry_idx: u32,
+    mesh_entry_idx: u32,
+    triangle_idx: u32,
+    state: AppState<'_>,
+) -> Result<Option<TriangleMetadata>, AppError> {
+    let read_state = state.read();
+    let Some(model) = read_state.cached_zones.get(&zone_id) else {
+        return Err(anyhow!("Unable to get zone model bytes.").into());
+    };
+
+    let metadata = model
+        .mesh
+        .grid_cells
+        .get(grid_entry_idx as usize)
+        .and_then(|grid_entry| grid_entry.indices.get(mesh_entry_idx as usize))
+        .and_then(|indices| {
+            let block = model.mesh.blocks.get(indices.block_idx as usize)?;
+            let placement = model.mesh.placements.get(indices.placement_idx as usize)?;
+            Some((block, placement))
+        })
+        .and_then(|(block, placement)| {
+            let tri = block.triangles.get(triangle_idx as usize)?;
+            Some(TriangleMetadata {
+                grid_entry_idx: grid_entry_idx,
+                mesh_entry_idx: mesh_entry_idx,
+
+                material: tri.material,
+                is_invalid_triangle: tri.is_invalid_triangle,
+                is_barrier: tri.is_barrier,
+
+                map_id: placement.get_map_id(),
+                o2w: placement.o2w,
+                o2w_opts: placement.o2w_opts,
+                w2o: placement.w2o,
+                w2o_opts: placement.w2o_opts,
+                unk_floats: placement.unk_floats,
+                data_field_1: placement.data_field,
+                data_field_2: placement.unk_coll4_offset,
+                unk_bytes: placement.unk_bytes,
+                unk_1: placement.unk_1,
+                min_y: placement.min_y,
+                max_y: placement.max_y,
+                unk_2: placement.unk_2,
+
+                block_flags: block.flags,
+            })
+        });
+
+    Ok(metadata)
 }
 
 #[tauri::command]
