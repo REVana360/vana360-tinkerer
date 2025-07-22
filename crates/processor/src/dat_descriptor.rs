@@ -36,6 +36,7 @@ pub enum DatDescriptor {
     MenuItemsDescription,
     MenuItemsText,
     Merits,
+    Modifiers,
     MoonPhases,
     PolMessages,
     RaceNames,
@@ -152,6 +153,7 @@ impl DatDescriptor {
             DatDescriptor::MenuItemsDescription => Ok("menu_items_description".to_string()),
             DatDescriptor::MenuItemsText => Ok("menu_items_text".to_string()),
             DatDescriptor::Merits => Ok("merits".to_string()),
+            DatDescriptor::Modifiers => Ok("modifiers".to_string()),
             DatDescriptor::MoonPhases => Ok("moon_phases".to_string()),
             DatDescriptor::PolMessages => Ok("pol_messages".to_string()),
             DatDescriptor::RaceNames => Ok("race_names".to_string()),
@@ -290,6 +292,7 @@ impl DatDescriptor {
             "menu_items_description" => Some(DatDescriptor::MenuItemsDescription),
             "menu_items_text" => Some(DatDescriptor::MenuItemsText),
             "merits" => Some(DatDescriptor::Merits),
+            "modifiers" => Some(DatDescriptor::Modifiers),
             "moon_phases" => Some(DatDescriptor::MoonPhases),
             "pol_messages" => Some(DatDescriptor::PolMessages),
             "race_names" => Some(DatDescriptor::RaceNames),
@@ -351,6 +354,7 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().menu_items_text.clone())
             }
             DatDescriptor::Merits => converter.use_dat(DatIdMapping::get().merits.clone()),
+            DatDescriptor::Modifiers => converter.use_dat(DatIdMapping::get().modifiers.clone()),
             DatDescriptor::MoonPhases => converter.use_dat(DatIdMapping::get().moon_phases.clone()),
             DatDescriptor::PolMessages => {
                 converter.use_dat(DatIdMapping::get().pol_messages.clone())
