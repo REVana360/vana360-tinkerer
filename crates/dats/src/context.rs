@@ -8,7 +8,7 @@ use std::{
 use crate::{
     base::{Dat, DatError, DatId, DatPath, ZoneId},
     dat_format::DatFormat,
-    formats::dmsg2_string_table::Dmsg2Content,
+    formats::dmsg_list::DmsgContent,
     id_mapping::DatIdMapping,
     sanitize_filename::sanitize_filename,
 };
@@ -88,8 +88,8 @@ impl DatContext {
                 .clone();
 
             let mut display_name = match display_content {
-                Dmsg2Content::String { string } => string,
-                Dmsg2Content::Flags { .. } => {
+                DmsgContent::String { string } => string,
+                DmsgContent::Number { .. } => {
                     return Err(anyhow!("Expected string content for zone name."))
                 }
             };

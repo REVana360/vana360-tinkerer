@@ -1,8 +1,6 @@
 pub mod dialog;
-pub mod dmsg;
-pub mod dmsg1_string_table;
-pub mod dmsg2_string_table;
-pub mod dmsg3_string_table;
+pub mod dmsg_list;
+pub mod dmsg_table;
 pub mod entity_names;
 pub mod events;
 pub mod item_info;

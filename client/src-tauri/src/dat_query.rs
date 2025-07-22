@@ -36,6 +36,7 @@ pub fn get_standalone_string_dats() -> Vec<DatDescriptor> {
         DatDescriptor::KeyItems,
         DatDescriptor::MenuItemsDescription,
         DatDescriptor::MenuItemsText,
+        DatDescriptor::Merits,
         DatDescriptor::MoonPhases,
         // DatDescriptor::PolMessages,  // TODO: XiStringTable parsing isn't fully supported yet
         DatDescriptor::RaceNames,
