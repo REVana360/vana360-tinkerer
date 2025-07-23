@@ -1,4 +1,5 @@
 import { useData } from "../store";
+import Updater from "./Updater";
 
 function Statusbar() {
   const {
@@ -14,10 +15,10 @@ function Statusbar() {
 
   return (
     <footer class="flex bg-slate-900 border-t border-t-slate-400 text-slate-100 justify-start p-1 text-sm">
-      <div class="flex">
+      <div class="flex w-full h-full items-center">
         <div
-          class="flex-shrink"
-          style={"display: grid; grid-template-columns: min-content auto"}
+          class="items-center grid"
+          style={"grid-template-columns: min-content max-content; height: min-content"}
         >
           <div class="px-1 text-right">Project:</div>
 
@@ -59,6 +60,8 @@ function Statusbar() {
             )}
           </div>
         </div>
+        <div class="flex-grow"></div>
+        <Updater></Updater>
       </div>
     </footer>
   );
