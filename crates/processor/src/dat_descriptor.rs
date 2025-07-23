@@ -67,6 +67,7 @@ pub enum DatDescriptor {
     Modifiers,
     MonsterFamilies,
     MoonPhases,
+    MountNames,
     PankrationNames,
     PolMessages,
     QuestsAbyssea,
@@ -227,6 +228,7 @@ impl DatDescriptor {
             DatDescriptor::MoblinMazeMongers => Ok("moblin_maze_mongers".to_string()),
             DatDescriptor::MonsterFamilies => Ok("monster_families".to_string()),
             DatDescriptor::MoonPhases => Ok("moon_phases".to_string()),
+            DatDescriptor::MountNames => Ok("mount_names".to_string()),
             DatDescriptor::PankrationNames => Ok("pankration_names".to_string()),
             DatDescriptor::PolMessages => Ok("pol_messages".to_string()),
             DatDescriptor::QuestsAbyssea => Ok("quests_abyssea".to_string()),
@@ -407,6 +409,7 @@ impl DatDescriptor {
             "modifiers" => Some(DatDescriptor::Modifiers),
             "monster_families" => Some(DatDescriptor::MonsterFamilies),
             "moon_phases" => Some(DatDescriptor::MoonPhases),
+            "mount_names" => Some(DatDescriptor::MountNames),
             "pankration_names" => Some(DatDescriptor::PankrationNames),
             "quests_abyssea" => Some(DatDescriptor::QuestsAbyssea),
             "quests_bastok" => Some(DatDescriptor::QuestsBastok),
@@ -562,6 +565,7 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().monster_families.clone())
             }
             DatDescriptor::MoonPhases => converter.use_dat(DatIdMapping::get().moon_phases.clone()),
+            DatDescriptor::MountNames => converter.use_dat(DatIdMapping::get().mount_names.clone()),
             DatDescriptor::PankrationNames => {
                 converter.use_dat(DatIdMapping::get().pankration_names.clone())
             }

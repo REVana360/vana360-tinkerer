@@ -36,8 +36,7 @@ const HEADER_SIZE: u32 = 0x40;
 
 impl DmsgTable {
     fn parse_header<T: ByteWalker>(walker: &mut T) -> Result<DmsgHeader> {
-        walker.expect_utf8_str("d_msg")?;
-        walker.expect_utf8_str("\0\0\0")?;
+        walker.expect_utf8_str("d_msg\0\0\0")?;
 
         walker.expect(1u16)?;
 
@@ -66,11 +65,12 @@ impl DmsgTable {
 
         if metadata_size > 0 && bytes_per_entry > 0 {
             return Err(anyhow!(
-                "Expected only either metadata size ({}) or bytes per entry  ({}) to be set.",
+                "Expected only either metadata size ({}) or bytes per entry ({}) to be set.",
                 metadata_size,
                 bytes_per_entry,
             ));
         }
+
         if bytes_per_entry > 0 {
             // Each entry has a fixed size
             expect(data_size, entry_count * bytes_per_entry)?;
@@ -394,6 +394,36 @@ mod tests {
         match altruism_help {
             DmsgContent::String { string } => {
                 assert_eq!(string, "Light Arts Stratagem.\nIncreases the accuracy of your next white magic spell.\nIncrease magic accuracy by 5.");
+            }
+            _ => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    pub fn mount_names() {
+        let mut dat_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        dat_path.push("resources/test/mount_names.DAT");
+
+        DmsgTable::check_path(&dat_path).unwrap();
+        let res = DmsgTable::from_path_checked_yaml(&dat_path).unwrap();
+
+        let crawler_content = &res.lists.get(&8).unwrap().content;
+        assert_eq!(crawler_content.len(), 2);
+
+        match &crawler_content[0] {
+            DmsgContent::String { string } => {
+                assert_eq!(string, "Crawler");
+            }
+            _ => {
+                assert!(false);
+            }
+        }
+
+        match &crawler_content[1] {
+            DmsgContent::Number { number } => {
+                assert_eq!(*number, 87);
             }
             _ => {
                 assert!(false);

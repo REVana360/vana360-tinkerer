@@ -52,11 +52,10 @@ impl DmsgEntryList {
             .map(|_| {
                 let offset = walker.step::<u32>()? ^ mask_u32;
                 let numbers = walker.step::<u32>()? ^ mask_u32;
-                if offset + LIST_STRING_PADDING + 4 > list_bytes {
+                if numbers == 0 && offset + LIST_STRING_PADDING + 4 > list_bytes {
                     return Err(anyhow!(
-                        "Invalid offset ({}) or numbers ({}) for list length {}.",
+                        "Invalid offset {} for list length {}.",
                         offset,
-                        numbers,
                         list_bytes
                     ));
                 }

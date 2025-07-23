@@ -69,6 +69,7 @@ pub fn get_standalone_string_dats() -> Vec<DatDescriptor> {
         DatDescriptor::Modifiers,
         DatDescriptor::MonsterFamilies,
         DatDescriptor::MoonPhases,
+        DatDescriptor::MountNames,
         DatDescriptor::PankrationNames,
         // DatDescriptor::PolMessages,  // TODO: XiStringTable parsing isn't fully supported yet
         DatDescriptor::QuestsAbyssea,
