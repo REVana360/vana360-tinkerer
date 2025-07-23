@@ -23,31 +23,73 @@ pub enum DatDescriptor {
     AbilityNames,
     AbilityDescriptions,
     AreaNames,
+    AreaNamesShort,
     AreaNamesAlt,
+    Augments,
+    BlueMagic,
+    CallMount,
     CharacterSelect,
     ChatFilterTypes,
+    ChocoboNames,
+    CommandUsage,
     DayNames,
     Directions,
+    EinherjarChambers,
+    Emotes,
     EquipmentLocations,
+    EquipmentLocationsAlt,
     ErrorMessages,
     IngameMessages1,
     IngameMessages2,
     JobNames,
+    JobNamesShort,
+    JobPointBonuses,
+    JobPointGifts,
     KeyItems,
     MenuItemsDescription,
     MenuItemsText,
     Merits,
+    MissionsAcp,
+    MissionsAmke,
+    MissionsAsa,
+    MissionsAssault,
+    MissionsBastok,
+    MissionsCampaign,
+    MissionsCop,
+    MissionsRov,
+    MissionsSandoria,
+    MissionsSoa,
+    MissionsToau,
+    MissionsWindurst,
+    MissionsWotg,
+    MissionsZilart,
+    MoblinMazeMongers,
     Modifiers,
+    MonsterFamilies,
     MoonPhases,
+    PankrationNames,
     PolMessages,
+    QuestsAbyssea,
+    QuestsBastok,
+    QuestsCoalition,
+    QuestsJeuno,
+    QuestsOther,
+    QuestsOutlands,
+    QuestsSandoria,
+    QuestsSoa,
+    QuestsToau,
+    QuestsWindurst,
+    QuestsWotg,
     RaceNames,
     RegionNames,
+    ServerNames,
     SpellNames,
     SpellDescriptions,
     StatusInfo,
     StatusNames,
     TimeAndPronouns,
     Titles,
+    TrustMessages,
     Misc1,
     Misc2,
     WeatherTypes,
@@ -141,31 +183,73 @@ impl DatDescriptor {
             DatDescriptor::AbilityNames => Ok("ability_names".to_string()),
             DatDescriptor::AbilityDescriptions => Ok("ability_descriptions".to_string()),
             DatDescriptor::AreaNames => Ok("area_names".to_string()),
+            DatDescriptor::AreaNamesShort => Ok("area_names_short".to_string()),
             DatDescriptor::AreaNamesAlt => Ok("area_names_alt".to_string()),
+            DatDescriptor::Augments => Ok("augments".to_string()),
+            DatDescriptor::BlueMagic => Ok("blue_magic".to_string()),
+            DatDescriptor::CallMount => Ok("call_mount".to_string()),
             DatDescriptor::CharacterSelect => Ok("character_select".to_string()),
             DatDescriptor::ChatFilterTypes => Ok("chat_filter_types".to_string()),
+            DatDescriptor::ChocoboNames => Ok("chocobo_names".to_string()),
+            DatDescriptor::CommandUsage => Ok("command_usage".to_string()),
+            DatDescriptor::Emotes => Ok("emotes".to_string()),
+            DatDescriptor::EinherjarChambers => Ok("einherjar_chambers".to_string()),
             DatDescriptor::DayNames => Ok("day_names".to_string()),
             DatDescriptor::Directions => Ok("directions".to_string()),
             DatDescriptor::EquipmentLocations => Ok("equipment_locations".to_string()),
+            DatDescriptor::EquipmentLocationsAlt => Ok("equipment_locations_alt".to_string()),
             DatDescriptor::ErrorMessages => Ok("error_messages".to_string()),
             DatDescriptor::IngameMessages1 => Ok("ingame_messages1".to_string()),
             DatDescriptor::IngameMessages2 => Ok("ingame_messages2".to_string()),
             DatDescriptor::JobNames => Ok("job_names".to_string()),
+            DatDescriptor::JobNamesShort => Ok("job_names_short".to_string()),
+            DatDescriptor::JobPointBonuses => Ok("job_point_bonuses".to_string()),
+            DatDescriptor::JobPointGifts => Ok("job_point_gifts".to_string()),
             DatDescriptor::KeyItems => Ok("key_items".to_string()),
             DatDescriptor::MenuItemsDescription => Ok("menu_items_description".to_string()),
             DatDescriptor::MenuItemsText => Ok("menu_items_text".to_string()),
             DatDescriptor::Merits => Ok("merits".to_string()),
             DatDescriptor::Modifiers => Ok("modifiers".to_string()),
+            DatDescriptor::MissionsAcp => Ok("missions_acp".to_string()),
+            DatDescriptor::MissionsAmke => Ok("missions_amke".to_string()),
+            DatDescriptor::MissionsAsa => Ok("missions_asa".to_string()),
+            DatDescriptor::MissionsAssault => Ok("missions_assault".to_string()),
+            DatDescriptor::MissionsBastok => Ok("missions_bastok".to_string()),
+            DatDescriptor::MissionsCampaign => Ok("missions_campaign".to_string()),
+            DatDescriptor::MissionsCop => Ok("missions_cop".to_string()),
+            DatDescriptor::MissionsRov => Ok("missions_rov".to_string()),
+            DatDescriptor::MissionsSandoria => Ok("missions_sandoria".to_string()),
+            DatDescriptor::MissionsSoa => Ok("missions_soa".to_string()),
+            DatDescriptor::MissionsToau => Ok("missions_toau".to_string()),
+            DatDescriptor::MissionsWindurst => Ok("missions_windurst".to_string()),
+            DatDescriptor::MissionsWotg => Ok("missions_wotg".to_string()),
+            DatDescriptor::MissionsZilart => Ok("missions_zilart".to_string()),
+            DatDescriptor::MoblinMazeMongers => Ok("moblin_maze_mongers".to_string()),
+            DatDescriptor::MonsterFamilies => Ok("monster_families".to_string()),
             DatDescriptor::MoonPhases => Ok("moon_phases".to_string()),
+            DatDescriptor::PankrationNames => Ok("pankration_names".to_string()),
             DatDescriptor::PolMessages => Ok("pol_messages".to_string()),
+            DatDescriptor::QuestsAbyssea => Ok("quests_abyssea".to_string()),
+            DatDescriptor::QuestsBastok => Ok("quests_bastok".to_string()),
+            DatDescriptor::QuestsCoalition => Ok("quests_coalition".to_string()),
+            DatDescriptor::QuestsJeuno => Ok("quests_jeuno".to_string()),
+            DatDescriptor::QuestsOther => Ok("quests_other".to_string()),
+            DatDescriptor::QuestsOutlands => Ok("quests_outlands".to_string()),
+            DatDescriptor::QuestsSandoria => Ok("quests_sandoria".to_string()),
+            DatDescriptor::QuestsSoa => Ok("quests_soa".to_string()),
+            DatDescriptor::QuestsToau => Ok("quests_toau".to_string()),
+            DatDescriptor::QuestsWindurst => Ok("quests_windurst".to_string()),
+            DatDescriptor::QuestsWotg => Ok("quests_wotg".to_string()),
             DatDescriptor::RaceNames => Ok("race_names".to_string()),
             DatDescriptor::RegionNames => Ok("region_names".to_string()),
+            DatDescriptor::ServerNames => Ok("server_names".to_string()),
             DatDescriptor::SpellNames => Ok("spell_names".to_string()),
             DatDescriptor::SpellDescriptions => Ok("spell_descriptions".to_string()),
             DatDescriptor::StatusInfo => Ok("status_info".to_string()),
             DatDescriptor::StatusNames => Ok("status_names".to_string()),
             DatDescriptor::TimeAndPronouns => Ok("time_and_pronouns".to_string()),
             DatDescriptor::Titles => Ok("titles".to_string()),
+            DatDescriptor::TrustMessages => Ok("trust_messages".to_string()),
             DatDescriptor::Misc1 => Ok("misc1".to_string()),
             DatDescriptor::Misc2 => Ok("misc2".to_string()),
             DatDescriptor::WeatherTypes => Ok("weather_types".to_string()),
@@ -277,33 +361,75 @@ impl DatDescriptor {
             "ability_names" => Some(DatDescriptor::AbilityNames),
             "ability_descriptions" => Some(DatDescriptor::AbilityDescriptions),
             "area_names" => Some(DatDescriptor::AreaNames),
+            "area_names_short" => Some(DatDescriptor::AreaNamesShort),
             "area_names_alt" => Some(DatDescriptor::AreaNamesAlt),
+            "augments" => Some(DatDescriptor::Augments),
+            "blue_magic" => Some(DatDescriptor::BlueMagic),
+            "call_mount" => Some(DatDescriptor::CallMount),
             "character_select" => Some(DatDescriptor::CharacterSelect),
             "chat_filter_types" => Some(DatDescriptor::ChatFilterTypes),
+            "chocobo_names" => Some(DatDescriptor::ChocoboNames),
+            "command_usage" => Some(DatDescriptor::CommandUsage),
+            "einherjar_chambers" => Some(DatDescriptor::EinherjarChambers),
+            "emotes" => Some(DatDescriptor::Emotes),
             "day_names" => Some(DatDescriptor::DayNames),
             "directions" => Some(DatDescriptor::Directions),
             "equipment_locations" => Some(DatDescriptor::EquipmentLocations),
+            "equipment_locations_alt" => Some(DatDescriptor::EquipmentLocationsAlt),
             "error_messages" => Some(DatDescriptor::ErrorMessages),
             "ingame_messages1" => Some(DatDescriptor::IngameMessages1),
             "ingame_messages2" => Some(DatDescriptor::IngameMessages2),
             "job_names" => Some(DatDescriptor::JobNames),
+            "job_names_short" => Some(DatDescriptor::JobNamesShort),
+            "job_point_bonuses" => Some(DatDescriptor::JobPointBonuses),
+            "job_point_gifts" => Some(DatDescriptor::JobPointGifts),
             "key_items" => Some(DatDescriptor::KeyItems),
             "data_menu" => Some(DatDescriptor::DataMenu),
             "quests_mission_keyitems" => Some(DatDescriptor::QuestsMissionsKeyItems),
             "menu_items_description" => Some(DatDescriptor::MenuItemsDescription),
             "menu_items_text" => Some(DatDescriptor::MenuItemsText),
             "merits" => Some(DatDescriptor::Merits),
+            "missions_acp" => Some(DatDescriptor::MissionsAcp),
+            "missions_amke" => Some(DatDescriptor::MissionsAmke),
+            "missions_asa" => Some(DatDescriptor::MissionsAsa),
+            "missions_assault" => Some(DatDescriptor::MissionsAssault),
+            "missions_bastok" => Some(DatDescriptor::MissionsBastok),
+            "missions_campaign" => Some(DatDescriptor::MissionsCampaign),
+            "missions_cop" => Some(DatDescriptor::MissionsCop),
+            "missions_rov" => Some(DatDescriptor::MissionsRov),
+            "missions_sandoria" => Some(DatDescriptor::MissionsSandoria),
+            "missions_soa" => Some(DatDescriptor::MissionsSoa),
+            "missions_toau" => Some(DatDescriptor::MissionsToau),
+            "missions_windurst" => Some(DatDescriptor::MissionsWindurst),
+            "missions_wotg" => Some(DatDescriptor::MissionsWotg),
+            "missions_zilart" => Some(DatDescriptor::MissionsZilart),
+            "moblin_maze_mongers" => Some(DatDescriptor::MoblinMazeMongers),
             "modifiers" => Some(DatDescriptor::Modifiers),
+            "monster_families" => Some(DatDescriptor::MonsterFamilies),
             "moon_phases" => Some(DatDescriptor::MoonPhases),
+            "pankration_names" => Some(DatDescriptor::PankrationNames),
+            "quests_abyssea" => Some(DatDescriptor::QuestsAbyssea),
+            "quests_bastok" => Some(DatDescriptor::QuestsBastok),
+            "quests_coalition" => Some(DatDescriptor::QuestsCoalition),
+            "quests_jeuno" => Some(DatDescriptor::QuestsJeuno),
+            "quests_other" => Some(DatDescriptor::QuestsOther),
+            "quests_outlands" => Some(DatDescriptor::QuestsOutlands),
+            "quests_sandoria" => Some(DatDescriptor::QuestsSandoria),
+            "quests_soa" => Some(DatDescriptor::QuestsSoa),
+            "quests_toau" => Some(DatDescriptor::QuestsToau),
+            "quests_windurst" => Some(DatDescriptor::QuestsWindurst),
+            "quests_wotg" => Some(DatDescriptor::QuestsWotg),
             "pol_messages" => Some(DatDescriptor::PolMessages),
             "race_names" => Some(DatDescriptor::RaceNames),
             "region_names" => Some(DatDescriptor::RegionNames),
+            "server_names" => Some(DatDescriptor::ServerNames),
             "spell_names" => Some(DatDescriptor::SpellNames),
             "spell_descriptions" => Some(DatDescriptor::SpellDescriptions),
             "status_info" => Some(DatDescriptor::StatusInfo),
             "status_names" => Some(DatDescriptor::StatusNames),
             "time_and_pronouns" => Some(DatDescriptor::TimeAndPronouns),
             "titles" => Some(DatDescriptor::Titles),
+            "trust_messages" => Some(DatDescriptor::TrustMessages),
             "misc1" => Some(DatDescriptor::Misc1),
             "misc2" => Some(DatDescriptor::Misc2),
             "weather_types" => Some(DatDescriptor::WeatherTypes),
@@ -326,19 +452,38 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().ability_descriptions.clone())
             }
             DatDescriptor::AreaNames => converter.use_dat(DatIdMapping::get().area_names.clone()),
+            DatDescriptor::AreaNamesShort => {
+                converter.use_dat(DatIdMapping::get().area_names_short.clone())
+            }
             DatDescriptor::AreaNamesAlt => {
                 converter.use_dat(DatIdMapping::get().area_names_alt.clone())
             }
+            DatDescriptor::Augments => converter.use_dat(DatIdMapping::get().augments.clone()),
+            DatDescriptor::BlueMagic => converter.use_dat(DatIdMapping::get().blue_magic.clone()),
+            DatDescriptor::CallMount => converter.use_dat(DatIdMapping::get().call_mount.clone()),
             DatDescriptor::CharacterSelect => {
                 converter.use_dat(DatIdMapping::get().character_select.clone())
             }
             DatDescriptor::ChatFilterTypes => {
                 converter.use_dat(DatIdMapping::get().chat_filter_types.clone())
             }
+            DatDescriptor::ChocoboNames => {
+                converter.use_dat(DatIdMapping::get().chocobo_names.clone())
+            }
+            DatDescriptor::CommandUsage => {
+                converter.use_dat(DatIdMapping::get().command_usage.clone())
+            }
+            DatDescriptor::EinherjarChambers => {
+                converter.use_dat(DatIdMapping::get().einherjar_chambers.clone())
+            }
+            DatDescriptor::Emotes => converter.use_dat(DatIdMapping::get().emotes.clone()),
             DatDescriptor::DayNames => converter.use_dat(DatIdMapping::get().day_names.clone()),
             DatDescriptor::Directions => converter.use_dat(DatIdMapping::get().directions.clone()),
             DatDescriptor::EquipmentLocations => {
                 converter.use_dat(DatIdMapping::get().equipment_locations.clone())
+            }
+            DatDescriptor::EquipmentLocationsAlt => {
+                converter.use_dat(DatIdMapping::get().equipment_locations_alt.clone())
             }
             DatDescriptor::ErrorMessages => {
                 converter.use_dat(DatIdMapping::get().error_messages.clone())
@@ -350,6 +495,15 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().ingame_messages_2.clone())
             }
             DatDescriptor::JobNames => converter.use_dat(DatIdMapping::get().job_names.clone()),
+            DatDescriptor::JobNamesShort => {
+                converter.use_dat(DatIdMapping::get().job_names_short.clone())
+            }
+            DatDescriptor::JobPointBonuses => {
+                converter.use_dat(DatIdMapping::get().job_point_bonuses.clone())
+            }
+            DatDescriptor::JobPointGifts => {
+                converter.use_dat(DatIdMapping::get().job_point_gifts.clone())
+            }
             DatDescriptor::KeyItems => converter.use_dat(DatIdMapping::get().key_items.clone()),
             DatDescriptor::MenuItemsDescription => {
                 converter.use_dat(DatIdMapping::get().menu_items_description.clone())
@@ -358,14 +512,95 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().menu_items_text.clone())
             }
             DatDescriptor::Merits => converter.use_dat(DatIdMapping::get().merits.clone()),
+            DatDescriptor::MissionsAcp => {
+                converter.use_dat(DatIdMapping::get().missions_acp.clone())
+            }
+            DatDescriptor::MissionsAmke => {
+                converter.use_dat(DatIdMapping::get().missions_amke.clone())
+            }
+            DatDescriptor::MissionsAsa => {
+                converter.use_dat(DatIdMapping::get().missions_asa.clone())
+            }
+            DatDescriptor::MissionsAssault => {
+                converter.use_dat(DatIdMapping::get().missions_assault.clone())
+            }
+            DatDescriptor::MissionsBastok => {
+                converter.use_dat(DatIdMapping::get().missions_bastok.clone())
+            }
+            DatDescriptor::MissionsCampaign => {
+                converter.use_dat(DatIdMapping::get().missions_campaign.clone())
+            }
+            DatDescriptor::MissionsCop => {
+                converter.use_dat(DatIdMapping::get().missions_cop.clone())
+            }
+            DatDescriptor::MissionsRov => {
+                converter.use_dat(DatIdMapping::get().missions_rov.clone())
+            }
+            DatDescriptor::MissionsSandoria => {
+                converter.use_dat(DatIdMapping::get().missions_sandoria.clone())
+            }
+            DatDescriptor::MissionsSoa => {
+                converter.use_dat(DatIdMapping::get().missions_soa.clone())
+            }
+            DatDescriptor::MissionsToau => {
+                converter.use_dat(DatIdMapping::get().missions_toau.clone())
+            }
+            DatDescriptor::MissionsWindurst => {
+                converter.use_dat(DatIdMapping::get().missions_windurst.clone())
+            }
+            DatDescriptor::MissionsWotg => {
+                converter.use_dat(DatIdMapping::get().missions_wotg.clone())
+            }
+            DatDescriptor::MissionsZilart => {
+                converter.use_dat(DatIdMapping::get().missions_zilart.clone())
+            }
+            DatDescriptor::MoblinMazeMongers => {
+                converter.use_dat(DatIdMapping::get().moblin_maze_mongers.clone())
+            }
             DatDescriptor::Modifiers => converter.use_dat(DatIdMapping::get().modifiers.clone()),
+            DatDescriptor::MonsterFamilies => {
+                converter.use_dat(DatIdMapping::get().monster_families.clone())
+            }
             DatDescriptor::MoonPhases => converter.use_dat(DatIdMapping::get().moon_phases.clone()),
+            DatDescriptor::PankrationNames => {
+                converter.use_dat(DatIdMapping::get().pankration_names.clone())
+            }
             DatDescriptor::PolMessages => {
                 converter.use_dat(DatIdMapping::get().pol_messages.clone())
             }
+            DatDescriptor::QuestsAbyssea => {
+                converter.use_dat(DatIdMapping::get().quests_abyssea.clone())
+            }
+            DatDescriptor::QuestsBastok => {
+                converter.use_dat(DatIdMapping::get().quests_bastok.clone())
+            }
+            DatDescriptor::QuestsCoalition => {
+                converter.use_dat(DatIdMapping::get().quests_coalition.clone())
+            }
+            DatDescriptor::QuestsJeuno => {
+                converter.use_dat(DatIdMapping::get().quests_jeuno.clone())
+            }
+            DatDescriptor::QuestsOther => {
+                converter.use_dat(DatIdMapping::get().quests_other.clone())
+            }
+            DatDescriptor::QuestsOutlands => {
+                converter.use_dat(DatIdMapping::get().quests_outlands.clone())
+            }
+            DatDescriptor::QuestsSandoria => {
+                converter.use_dat(DatIdMapping::get().quests_sandoria.clone())
+            }
+            DatDescriptor::QuestsSoa => converter.use_dat(DatIdMapping::get().quests_soa.clone()),
+            DatDescriptor::QuestsToau => converter.use_dat(DatIdMapping::get().quests_toau.clone()),
+            DatDescriptor::QuestsWindurst => {
+                converter.use_dat(DatIdMapping::get().quests_windurst.clone())
+            }
+            DatDescriptor::QuestsWotg => converter.use_dat(DatIdMapping::get().quests_wotg.clone()),
             DatDescriptor::RaceNames => converter.use_dat(DatIdMapping::get().race_names.clone()),
             DatDescriptor::RegionNames => {
                 converter.use_dat(DatIdMapping::get().region_names.clone())
+            }
+            DatDescriptor::ServerNames => {
+                converter.use_dat(DatIdMapping::get().server_names.clone())
             }
             DatDescriptor::SpellNames => converter.use_dat(DatIdMapping::get().spell_names.clone()),
             DatDescriptor::SpellDescriptions => {
@@ -379,6 +614,9 @@ impl DatDescriptor {
                 converter.use_dat(DatIdMapping::get().time_and_pronouns.clone())
             }
             DatDescriptor::Titles => converter.use_dat(DatIdMapping::get().titles.clone()),
+            DatDescriptor::TrustMessages => {
+                converter.use_dat(DatIdMapping::get().trust_messages.clone())
+            }
             DatDescriptor::Misc1 => converter.use_dat(DatIdMapping::get().misc1.clone()),
             DatDescriptor::Misc2 => converter.use_dat(DatIdMapping::get().misc2.clone()),
             DatDescriptor::WeatherTypes => {
