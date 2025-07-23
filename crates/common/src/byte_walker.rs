@@ -1,13 +1,15 @@
 use std::{fmt::Display, str::from_utf8};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use thiserror::Error;
 
 use crate::{byte_functions::HasByteFunctions, expect};
 
 #[derive(Error, Debug)]
 pub enum ByteWalkerError {
-    #[error("Trying to read buffer at index {requested_index:?}, but buffer is only {buffer_length:?} long.")]
+    #[error(
+        "Trying to read buffer at index {requested_index:?}, but buffer is only {buffer_length:?} long."
+    )]
     OutOfRange {
         buffer_length: usize,
         requested_index: usize,

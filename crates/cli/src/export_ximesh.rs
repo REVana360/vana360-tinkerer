@@ -1,11 +1,11 @@
 use std::{io::Write, path::PathBuf};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use dats::{
     context::DatContext, formats::zone_data::zone_model::ZoneCollisionMesh,
     id_mapping::DatIdMapping,
 };
-use flate2::{write::ZlibEncoder, Compression};
+use flate2::{Compression, write::ZlibEncoder};
 use processor::ximesh::get_ximesh_bytes;
 use tokio::{fs, task::JoinSet};
 

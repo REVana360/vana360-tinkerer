@@ -12,7 +12,7 @@ use crate::{
     id_mapping::DatIdMapping,
     sanitize_filename::sanitize_filename,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -90,7 +90,7 @@ impl DatContext {
             let mut display_name = match display_content {
                 DmsgContent::String { string } => string,
                 DmsgContent::Number { .. } => {
-                    return Err(anyhow!("Expected string content for zone name."))
+                    return Err(anyhow!("Expected string content for zone name."));
                 }
             };
 

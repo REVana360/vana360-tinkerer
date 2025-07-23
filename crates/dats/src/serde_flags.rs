@@ -2,13 +2,13 @@ use std::{borrow::Cow, fmt};
 
 use anyhow::anyhow;
 use bitflags::{
-    parser::{ParseHex, WriteHex},
     Flags,
+    parser::{ParseHex, WriteHex},
 };
 use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{Error, Visitor},
     ser::SerializeSeq,
-    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 pub fn serialize<B: Flags + Serialize, S: Serializer>(

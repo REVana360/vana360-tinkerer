@@ -4,18 +4,18 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use processor::{
     dat_descriptor::DatDescriptor, processor::DatProcessorMessage, ximesh::get_ximesh_bytes,
 };
 use tracing_subscriber::fmt::MakeWriter;
 
 use crate::{
+    DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE,
     app_persistence::PersistenceData,
     dat_query::{self, BrowseInfo, ZoneInfo},
     errors::AppError,
     state::{AppState, FileNotification},
-    DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE,
 };
 use tauri::ipc::Response;
 

@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, fmt::Display, marker::PhantomData, ops::Deref, path::PathBuf};
 
 use crate::{context::DatContext, dat_format::DatFormat};
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 
 pub type ZoneId = u16;

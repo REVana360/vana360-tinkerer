@@ -1,11 +1,11 @@
 use std::{iter::Peekable, str::CharIndices};
 
 use crate::{
+    TAG_END, TAG_PARAM_START, TAG_PREFIX, TAG_START,
     conversion_tables::ConversionTable,
     named_bytes::{base_len_1, icon, prefix_01, prefix_7f_len_1},
-    TAG_END, TAG_PARAM_START, TAG_PREFIX, TAG_START,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
 pub struct Encoder<'a> {
     decoded_bytes: Vec<u8>,

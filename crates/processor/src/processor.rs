@@ -1,6 +1,6 @@
 use std::{
     path::PathBuf,
-    sync::{mpsc::Sender, Arc, Mutex},
+    sync::{Arc, Mutex, mpsc::Sender},
 };
 
 use crate::dat_descriptor::DatDescriptor;

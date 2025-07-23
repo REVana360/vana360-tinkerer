@@ -1,10 +1,10 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use common::byte_walker::ByteWalker;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::serde_hex;
 
-use super::{collision_mesh::CollisionMesh, ChunkData, ZoneData};
+use super::{ChunkData, ZoneData, collision_mesh::CollisionMesh};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ZoneCollisionMesh {

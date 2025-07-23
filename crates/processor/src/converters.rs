@@ -5,7 +5,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dats::{base::Dat, context::DatContext, dat_format::DatFormat};
 use serde::Serialize;
 

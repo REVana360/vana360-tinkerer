@@ -2,7 +2,7 @@ pub mod collision_mesh;
 pub mod zone_mmb;
 pub mod zone_model;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use common::{
     byte_walker::ByteWalker, vec_byte_walker::VecByteWalker, writing_byte_walker::WritingByteWalker,
 };

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use common::{
     byte_walker::ByteWalker, expect, slice_byte_walker::SliceByteWalker,
     writing_byte_walker::WritingByteWalker,
@@ -393,7 +393,10 @@ mod tests {
         let altruism_help = res.lists.get(&3265).unwrap().content.get(0).unwrap();
         match altruism_help {
             DmsgContent::String { string } => {
-                assert_eq!(string, "Light Arts Stratagem.\nIncreases the accuracy of your next white magic spell.\nIncrease magic accuracy by 5.");
+                assert_eq!(
+                    string,
+                    "Light Arts Stratagem.\nIncreases the accuracy of your next white magic spell.\nIncrease magic accuracy by 5."
+                );
             }
             _ => {
                 assert!(false);

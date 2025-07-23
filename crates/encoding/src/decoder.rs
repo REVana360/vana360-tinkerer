@@ -1,10 +1,10 @@
 use std::char::decode_utf16;
 
 use crate::{
+    SPACE_U16, TAG_END_U16, TAG_PARAM_START_U16, TAG_PREFIX_U16, TAG_START_U16,
     conversion_tables::ConversionTable,
     encoder::Encoder,
     named_bytes::{base_len_1, icon, prefix_01, prefix_7f_len_1},
-    SPACE_U16, TAG_END_U16, TAG_PARAM_START_U16, TAG_PREFIX_U16, TAG_START_U16,
 };
 use anyhow::Result;
 

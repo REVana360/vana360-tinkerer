@@ -1,5 +1,5 @@
 #![allow(dead_code)] // TODO: remove once images are in use
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use common::byte_walker::ByteWalker;
 use serde_derive::{Deserialize, Serialize};
 

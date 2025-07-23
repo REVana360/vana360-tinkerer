@@ -1,5 +1,5 @@
 use crate::serde_hex;
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Ok, Result, anyhow};
 use common::{
     byte_walker::ByteWalker, get_padding, slice_byte_walker::SliceByteWalker,
     writing_byte_walker::WritingByteWalker,

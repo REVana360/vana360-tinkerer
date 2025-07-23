@@ -8,7 +8,7 @@ pub mod writing_byte_walker;
 
 use std::{ffi::CStr, fmt::Display};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
 // unsafe: s must contain a null byte, and be valid utf-8
 pub unsafe fn str_from_null_terminated_utf8_unchecked(s: &[u8]) -> &str {

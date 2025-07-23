@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Ok, Result, anyhow};
 use common::{
     byte_walker::{BufferedByteWalker, ByteWalker},
     get_padding,
@@ -707,7 +707,10 @@ mod tests {
             assert_eq!(article_type, &EnglishArticle::SuitsOf);
             assert_eq!(singular_name, "voodoo mail");
             assert_eq!(plural_name, "suits of voodoo mail");
-            assert_eq!(description, "The envious aura that looms over\nthis mail seems to invite utter\nruin to descend upon its bearer.");
+            assert_eq!(
+                description,
+                "The envious aura that looms over\nthis mail seems to invite utter\nruin to descend upon its bearer."
+            );
         } else {
             panic!("Expected english strings")
         }

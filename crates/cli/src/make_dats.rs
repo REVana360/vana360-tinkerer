@@ -2,10 +2,10 @@ use std::{
     collections::HashMap,
     fs::File,
     path::PathBuf,
-    sync::{mpsc, Arc},
+    sync::{Arc, mpsc},
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dats::context::{DatContext, ZoneName};
 use processor::{
     dat_descriptor::DatDescriptor,

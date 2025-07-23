@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Ok, Result, anyhow};
 use common::{
     byte_walker::{BufferedByteWalker, ByteWalker},
     vec_byte_walker::VecByteWalker,

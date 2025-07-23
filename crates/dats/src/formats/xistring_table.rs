@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use common::{byte_walker::ByteWalker, expect_msg, writing_byte_walker::WritingByteWalker};
 use encoding::{decoder::Decoder, encoder::Encoder};
 use serde_derive::{Deserialize, Serialize};
