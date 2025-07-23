@@ -136,19 +136,33 @@ impl Events {
     pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<Self> {
         let block_count = walker.step::<u32>()?;
 
+        if block_count > u32::MAX / 4 - 4 {
+            return Err(anyhow!("Too many blocks to be an event DAT."));
+        }
+
         let header_size = (block_count * 4 + 4) as usize;
         if walker.len() < header_size {
             return Err(anyhow!("Not enough bytes to read event block sizes."));
         }
 
+        let mut full_size = header_size as u32;
         let block_sizes: Vec<u32> = (0..block_count)
-            .map(|_| walker.step::<u32>())
+            .map(|_| {
+                let size = walker.step::<u32>()?;
+                match full_size.checked_add(size) {
+                    Some(new_size) => {
+                        full_size = new_size;
+                    }
+                    None => {
+                        return Err(anyhow!("Event block size is too big and has overflowed."));
+                    }
+                }
+                if full_size > walker.len() as u32 {
+                    return Err(anyhow!("Event block sizes exceed bytes in DAT."));
+                }
+                Ok(size)
+            })
             .collect::<Result<Vec<_>, _>>()?;
-
-        let full_size = header_size + block_sizes.iter().sum::<u32>() as usize;
-        if walker.len() < full_size {
-            return Err(anyhow!("Not enough bytes to read all event blocks."));
-        }
 
         let mut blocks = Vec::with_capacity(block_count as usize);
         for block_size in block_sizes {

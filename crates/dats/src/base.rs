@@ -2,10 +2,11 @@ use std::{collections::BTreeMap, fmt::Display, marker::PhantomData, ops::Deref, 
 
 use crate::{context::DatContext, dat_format::DatFormat};
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 
 pub type ZoneId = u16;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct DatId(u32);
 
 impl From<u32> for DatId {

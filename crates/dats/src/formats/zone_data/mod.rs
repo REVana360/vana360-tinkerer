@@ -71,7 +71,9 @@ impl Chunk {
         let unknown_0x12 = walker.step::<u32>()?;
 
         let chunk_type = (type_and_length & 0x7F) as u8;
-        let length = (((type_and_length >> 7) & 0x7FFFF) << 4) - 0x10;
+        let length = (((type_and_length >> 7) & 0x7FFFF) << 4)
+            .checked_sub(0x10)
+            .ok_or_else(|| anyhow!("Invalid chunk data."))?;
 
         let data = ChunkData::parse(walker, chunk_type, length)?;
 
@@ -241,7 +243,8 @@ impl DatFormat for ZoneData {
         ZoneData::parse(walker)
     }
 
-    fn check_type<T: ByteWalker>(_walker: &mut T) -> Result<()> {
+    fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
+        ZoneData::parse(walker)?;
         Ok(())
     }
 }

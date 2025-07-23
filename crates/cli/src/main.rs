@@ -1,5 +1,6 @@
 mod export_ximesh;
 mod make_dats;
+mod scan_dats;
 mod util;
 
 use std::path::PathBuf;
@@ -9,6 +10,8 @@ use clap::{Parser, Subcommand};
 
 use export_ximesh::export_zone_meshes;
 use make_dats::make_dats;
+
+use crate::scan_dats::scan_dats;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -37,6 +40,11 @@ enum Commands {
         #[arg(short, long)]
         out: Option<PathBuf>,
     },
+
+    ScanDats {
+        #[arg(value_name = "FFXI_PATH")]
+        ffxi_path: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -57,6 +65,9 @@ async fn main() -> Result<()> {
             out,
         } => {
             make_dats(project_dir, &yaml_files, out)?;
+        }
+        Commands::ScanDats { ffxi_path } => {
+            scan_dats(ffxi_path)?;
         }
     }
 
