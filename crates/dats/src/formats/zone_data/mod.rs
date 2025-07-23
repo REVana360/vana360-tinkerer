@@ -251,7 +251,7 @@ impl DatFormat for ZoneData {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::BufWriter, path::PathBuf};
+    use std::path::PathBuf;
 
     use crate::dat_format::DatFormat;
 
@@ -263,9 +263,6 @@ mod tests {
         dat_path.push("resources/test/zone_data_Pashhow_Marshlands.DAT");
 
         ZoneData::check_path(&dat_path).unwrap();
-        let res = ZoneData::from_path(&dat_path).unwrap();
-
-        let file = File::create("Pashhow_Marshlands.yml").unwrap();
-        serde_yaml::to_writer(BufWriter::new(file), &res).unwrap();
+        let _res = ZoneData::from_path(&dat_path).unwrap();
     }
 }
