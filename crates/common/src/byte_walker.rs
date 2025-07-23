@@ -72,6 +72,19 @@ pub trait ByteWalker {
     }
 
     #[inline]
+    fn step_until_with_end(&mut self, end_char: u8) -> Result<&[u8]> {
+        let start_offset = self.offset();
+        let mut current_offset = start_offset;
+        while let Ok(byte) = self.read_at::<u8>(current_offset) {
+            current_offset += 1;
+            if byte == end_char {
+                break;
+            }
+        }
+        self.take_bytes(current_offset - start_offset)
+    }
+
+    #[inline]
     fn step_until_chars<const N: usize>(&mut self, end_chars: [u8; N]) -> Result<&[u8]> {
         let start_offset = self.offset();
         let mut current_offset = start_offset;

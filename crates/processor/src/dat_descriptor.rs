@@ -17,6 +17,7 @@ use crate::converters::{DatToYamlConverter, YamlToDatConverter};
 #[serde(tag = "type", content = "index")]
 pub enum DatDescriptor {
     DataMenu,
+    QuestsMissionsKeyItems,
 
     // String tables
     AbilityNames,
@@ -135,6 +136,7 @@ impl DatDescriptor {
     fn get_relative_path(&self, dat_context: &DatContext) -> Result<String> {
         match self {
             DatDescriptor::DataMenu => Ok("data_menu".to_string()),
+            DatDescriptor::QuestsMissionsKeyItems => Ok("quests_mission_keyitems".to_string()),
 
             DatDescriptor::AbilityNames => Ok("ability_names".to_string()),
             DatDescriptor::AbilityDescriptions => Ok("ability_descriptions".to_string()),
@@ -272,8 +274,6 @@ impl DatDescriptor {
 
         // Files in root directory
         match file_name {
-            "data_menu" => Some(DatDescriptor::DataMenu),
-
             "ability_names" => Some(DatDescriptor::AbilityNames),
             "ability_descriptions" => Some(DatDescriptor::AbilityDescriptions),
             "area_names" => Some(DatDescriptor::AreaNames),
@@ -288,7 +288,8 @@ impl DatDescriptor {
             "ingame_messages2" => Some(DatDescriptor::IngameMessages2),
             "job_names" => Some(DatDescriptor::JobNames),
             "key_items" => Some(DatDescriptor::KeyItems),
-            "menu" => Some(DatDescriptor::DataMenu),
+            "data_menu" => Some(DatDescriptor::DataMenu),
+            "quests_mission_keyitems" => Some(DatDescriptor::QuestsMissionsKeyItems),
             "menu_items_description" => Some(DatDescriptor::MenuItemsDescription),
             "menu_items_text" => Some(DatDescriptor::MenuItemsText),
             "merits" => Some(DatDescriptor::Merits),
@@ -314,6 +315,9 @@ impl DatDescriptor {
     fn convert_with<T: DatUsage>(self, converter: T) -> Result<PathBuf> {
         match self {
             DatDescriptor::DataMenu => converter.use_dat(DatIdMapping::get().data_menu.clone()),
+            DatDescriptor::QuestsMissionsKeyItems => {
+                converter.use_dat(DatIdMapping::get().quests_mission_keyitems.clone())
+            }
 
             DatDescriptor::AbilityNames => {
                 converter.use_dat(DatIdMapping::get().ability_names.clone())

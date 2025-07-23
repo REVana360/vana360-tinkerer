@@ -15,7 +15,10 @@ use tauri::async_runtime;
 use crate::errors::AppError;
 
 pub fn get_misc_dats() -> Vec<DatDescriptor> {
-    vec![DatDescriptor::DataMenu]
+    vec![
+        DatDescriptor::DataMenu,
+        DatDescriptor::QuestsMissionsKeyItems,
+    ]
 }
 
 pub fn get_standalone_string_dats() -> Vec<DatDescriptor> {

@@ -606,7 +606,10 @@ const ENTRY_SIZE: usize = 0xC00;
 impl ItemInfoTable {
     pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<Self> {
         if walker.len() % ENTRY_SIZE != 0 {
-            return Err(anyhow!("Length does not match a item info DAT."));
+            return Err(anyhow!(
+                "Length does not match an item info DAT: {}",
+                walker.len()
+            ));
         }
 
         let entry_count = walker.len() / ENTRY_SIZE;
@@ -636,7 +639,7 @@ impl DatFormat for ItemInfoTable {
 
     fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
         if walker.len() % ENTRY_SIZE != 0 {
-            return Err(anyhow!("Length does not match a item info DAT."));
+            return Err(anyhow!("Length does not match an item info DAT."));
         }
 
         // Parse one item info to check.

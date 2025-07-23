@@ -76,6 +76,7 @@ pub struct DatIdMapping {
 
     // Misc data
     pub data_menu: Dat<MenuTable>,
+    pub quests_mission_keyitems: Dat<MenuTable>,
 }
 
 static DAT_ID_MAPPING: OnceLock<DatIdMapping> = OnceLock::new();
@@ -201,6 +202,7 @@ impl DatIdMapping {
 
                 // Misc. data
                 data_menu: 81.into(),
+                quests_mission_keyitems: 82.into(),
             }
         })
     }

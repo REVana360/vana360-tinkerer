@@ -13,7 +13,7 @@ pub fn rotate(bytes: &mut [u8], offset: usize, size: usize, shift_size: usize) {
 }
 
 pub fn rotate_all(bytes: &mut [u8], shift_size: usize) {
-    if shift_size < 1 || shift_size > 8 {
+    if shift_size < 1 || shift_size > 7 {
         return;
     }
     bytes
@@ -66,6 +66,35 @@ pub fn encode_data_block_masked(bytes: &mut [u8]) {
     bytes[2] = save2;
     bytes[11] = save11;
     bytes[12] = save12;
+}
+
+pub fn get_text_shift_size(bytes: &[u8], offset: usize, size: usize) -> usize {
+    if size < 2 {
+        return 0;
+    }
+
+    if bytes[offset] == 0 && bytes[offset + 1] == 0 {
+        return 0;
+    }
+
+    let bit_count = u8::count_ones(bytes[offset + 1]) as i32 - u8::count_ones(bytes[offset]) as i32;
+
+    match bit_count.abs() % 5 {
+        0 => 1,
+        1 => 7,
+        2 => 2,
+        3 => 6,
+        4 => 3,
+        _ => 0,
+    }
+}
+
+pub fn decode_text_block(bytes: &mut [u8]) {
+    rotate_all(bytes, get_text_shift_size(bytes, 0, bytes.len()));
+}
+
+pub fn encode_text_block(bytes: &mut [u8]) {
+    rotate_all(bytes, 8 - get_text_shift_size(bytes, 0, bytes.len()));
 }
 
 #[inline]
