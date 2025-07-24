@@ -2,7 +2,7 @@ import Sidebar, { NavItem } from "./components/Sidebar";
 import Statusbar from "./components/Statusbar";
 import Home from "./components/Home";
 import { Routes, Route } from "@solidjs/router";
-import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidPlayCircle, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
+import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidDocumentText, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidPlayCircle, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
 import DatTable from "./components/DatTable";
 import Table from "./components/Table";
 import ZoneData from "./components/ZoneData";
@@ -31,6 +31,16 @@ const navItems: NavItem[] = [
     name: "Global dialog",
     path: "/global_dialog",
     icon: <HiSolidChatBubbleLeftRight />,
+  },
+  {
+    name: "Missions",
+    path: "/missions",
+    icon: <HiSolidDocumentText />,
+  },
+  {
+    name: "Quests",
+    path: "/quests",
+    icon: <HiSolidDocumentText />,
   },
 
   { header: "By zone" },
@@ -141,6 +151,32 @@ function App() {
                   <DatTable
                     title="Global Dialog"
                     rowsResourceFetcher={async () => unwrap(await commands.getGlobalDialogDats())}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
+                    hasJp={(v) => v.has_jp}
+                  />
+                )}
+              ></Route>
+
+              <Route
+                path="/missions"
+                component={() => (
+                  <DatTable
+                    title="Missions"
+                    rowsResourceFetcher={async () => unwrap(await commands.getMissionDats())}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
+                    hasJp={(v) => v.has_jp}
+                  />
+                )}
+              ></Route>
+
+              <Route
+                path="/quests"
+                component={() => (
+                  <DatTable
+                    title="Quests"
+                    rowsResourceFetcher={async () => unwrap(await commands.getQuestDats())}
                     columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
                     toDatDescriptor={(v) => v.descriptor}
                     hasJp={(v) => v.has_jp}

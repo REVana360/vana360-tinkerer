@@ -108,6 +108,18 @@ pub async fn get_standalone_string_dats() -> Result<&'static [DatDescriptorInfo]
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_mission_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::MISSION_DATS)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_quest_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::QUEST_DATS)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_item_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
     Ok(dat_query::ITEM_DATS)
 }

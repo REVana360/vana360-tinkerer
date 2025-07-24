@@ -53,6 +53,22 @@ async getStandaloneStringDats() : Promise<Result<DatDescriptorInfo[], any>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getMissionDats() : Promise<Result<DatDescriptorInfo[], any>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_mission_dats") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getQuestDats() : Promise<Result<DatDescriptorInfo[], any>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_quest_dats") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getItemDats() : Promise<Result<DatDescriptorInfo[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_item_dats") };

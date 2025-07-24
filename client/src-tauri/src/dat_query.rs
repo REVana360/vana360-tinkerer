@@ -72,11 +72,37 @@ pub static STANDALONE_DATS: &'static [DatDescriptorInfo] = {
         // DatDescriptor::IngameMessages2, // TODO: XiStringTable parsing isn't fully supported yet
         DatDescriptor::JobNames,
         DatDescriptor::JobNamesShort,
+        DatDescriptor::JobPointBonuses,
         DatDescriptor::JobPointGifts,
         DatDescriptor::KeyItems,
         DatDescriptor::MenuItemsDescription,
         DatDescriptor::MenuItemsText,
         DatDescriptor::Merits,
+        DatDescriptor::MoblinMazeMongers,
+        DatDescriptor::Modifiers,
+        DatDescriptor::MonsterFamilies,
+        DatDescriptor::MoonPhases,
+        DatDescriptor::MountNames,
+        DatDescriptor::PankrationNames,
+        // DatDescriptor::PolMessages,  // TODO: XiStringTable parsing isn't fully supported yet
+        DatDescriptor::RaceNames,
+        DatDescriptor::RegionNames,
+        DatDescriptor::ServerNames,
+        DatDescriptor::SpellNames,
+        DatDescriptor::SpellDescriptions,
+        DatDescriptor::StatusInfo,
+        DatDescriptor::StatusNames,
+        // DatDescriptor::TimeAndPronouns,  // TODO: XiStringTable parsing isn't fully supported yet
+        DatDescriptor::Titles,
+        DatDescriptor::TrustMessages,
+        DatDescriptor::Misc1,
+        DatDescriptor::Misc2,
+        DatDescriptor::WeatherTypes,
+    ])
+};
+
+pub static MISSION_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
         DatDescriptor::MissionsAcp,
         DatDescriptor::MissionsAmke,
         DatDescriptor::MissionsAsa,
@@ -91,13 +117,11 @@ pub static STANDALONE_DATS: &'static [DatDescriptorInfo] = {
         DatDescriptor::MissionsWindurst,
         DatDescriptor::MissionsWotg,
         DatDescriptor::MissionsZilart,
-        DatDescriptor::MoblinMazeMongers,
-        DatDescriptor::Modifiers,
-        DatDescriptor::MonsterFamilies,
-        DatDescriptor::MoonPhases,
-        DatDescriptor::MountNames,
-        DatDescriptor::PankrationNames,
-        // DatDescriptor::PolMessages,  // TODO: XiStringTable parsing isn't fully supported yet
+    ])
+};
+
+pub static QUEST_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
         DatDescriptor::QuestsAbyssea,
         DatDescriptor::QuestsBastok,
         DatDescriptor::QuestsCoalition,
@@ -109,19 +133,6 @@ pub static STANDALONE_DATS: &'static [DatDescriptorInfo] = {
         DatDescriptor::QuestsToau,
         DatDescriptor::QuestsWindurst,
         DatDescriptor::QuestsWotg,
-        DatDescriptor::RaceNames,
-        DatDescriptor::RegionNames,
-        DatDescriptor::ServerNames,
-        DatDescriptor::SpellNames,
-        DatDescriptor::SpellDescriptions,
-        DatDescriptor::StatusInfo,
-        DatDescriptor::StatusNames,
-        // DatDescriptor::TimeAndPronouns,  // TODO: XiStringTable parsing isn't fully supported yet
-        DatDescriptor::Titles,
-        DatDescriptor::TrustMessages,
-        DatDescriptor::Misc1,
-        DatDescriptor::Misc2,
-        DatDescriptor::WeatherTypes,
     ])
 };
 
