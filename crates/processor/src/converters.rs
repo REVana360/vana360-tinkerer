@@ -6,17 +6,15 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
-use dats::{base::Dat, context::DatContext, dat_format::DatFormat};
+use dats::{base::Dat, context::DatContext, dat_format::DatFormat, id_mapping::DatUsage};
 use serde::Serialize;
-
-use crate::dat_descriptor::DatUsage;
 
 pub(crate) struct DatToYamlConverter {
     pub dat_context: Arc<DatContext>,
     pub raw_data_path: PathBuf,
 }
 
-impl DatUsage for DatToYamlConverter {
+impl DatUsage<PathBuf> for DatToYamlConverter {
     fn use_dat<T: DatFormat + Serialize + for<'b> serde::Deserialize<'b>>(
         self,
         dat: Dat<T>,
@@ -44,7 +42,7 @@ pub(crate) struct YamlToDatConverter {
     pub dat_root_path: PathBuf,
 }
 
-impl DatUsage for YamlToDatConverter {
+impl DatUsage<PathBuf> for YamlToDatConverter {
     fn use_dat<T: DatFormat + Serialize + for<'a> serde::Deserialize<'a>>(
         self,
         dat: Dat<T>,

@@ -3,77 +3,81 @@ import {
   Match,
   Show,
   Switch,
+  batch,
   createMemo,
   createResource,
   createSignal,
   onMount,
 } from "solid-js";
-import fusejs from "fuse.js";
 import { commands, DatDescriptor } from "../bindings";
 import { useData } from "../store";
 import { unwrap } from "../util";
 
-interface DatTableProps<T extends { [key in Column]: any }, Column extends keyof T> {
+interface DatTableProps<T> {
   title: string;
   rowsResourceFetcher: () => Promise<T[]>,
-  columns: { name: string, key: Column }[],
-  defaultSortColumn: Column,
+  columns: { name: string, getter: (t: T) => any }[],
+  defaultSortColumn?: number,
   toDatDescriptor: (t: T) => DatDescriptor,
+  hasJp?: (t: T) => boolean,
 }
 
-function DatTable<T extends { [key in Column]: any }, Column extends keyof T & string>
-  ({ title, rowsResourceFetcher, columns, defaultSortColumn, toDatDescriptor }: DatTableProps<T, Column>) {
+function DatTable<T>
+  ({ title, rowsResourceFetcher, columns, defaultSortColumn, toDatDescriptor, hasJp: hasJpGiven }: DatTableProps<T>) {
   const {
     processing: { canProcess, isProcessing, processing },
     workingFiles: { hasWorkingFile }
   } = useData();
 
+  const hasJp = hasJpGiven ?? (() => false);
+
   const [rowsResource] = createResource(rowsResourceFetcher, { initialValue: [] });
 
-  const [sortBy, setSortBy] = createSignal<Column>(defaultSortColumn);
+  const [sortBy, setSortBy] = createSignal<number>(defaultSortColumn ?? 0);
   const [sortAsc, setSortAsc] = createSignal<boolean>(true);
   const [filterBy, setFilterBy] = createSignal<string>("");
 
-  const updateSort = (column: Column) => {
-    if (column == sortBy()) {
+  const updateSort = (columnIdx: number) => {
+    if (columnIdx == sortBy()) {
       setSortAsc(!sortAsc());
     } else {
-      setSortBy(column as any);
-      setSortAsc(true);
+      batch(() => {
+        setSortBy(columnIdx);
+        setSortAsc(true);
+      })
     }
   };
 
-  const fuseIndex = createMemo(() => {
-    return new fusejs(rowsResource(), {
-      keys: columns.map((col) => col.key),
-      threshold: 0.3,
-    });
-  });
-
-  const rows = () => {
-    let sortedRows;
+  const filteredRows = createMemo(() => {
     if (filterBy()) {
-      sortedRows = fuseIndex()
-        .search(filterBy())
-        .map((e) => e.item);
+      const filterVal = filterBy();
+      return rowsResource()
+        .filter((e) => {
+          return columns.find(c => {
+            return ("" + c.getter(e)).toLowerCase().includes(filterVal.toLowerCase());
+          })
+        });
     } else {
-      sortedRows = [...rowsResource()];
+      return [...(rowsResource())];
     }
+  })
 
-    sortedRows.sort((a, b) => {
-      const aValue = a[sortBy()];
-      const bValue = b[sortBy()];
-      const dir = sortAsc() ? 1 : -1;
+  const rows = createMemo(() => {
+    const sortByGetter = columns[sortBy()].getter;
+    const sortAscVal = sortAsc();
+    const dir = sortAscVal ? 1 : -1;
+    return filteredRows().sort((a, b) => {
+      const aValue = sortByGetter(a);
+      const bValue = sortByGetter(b);
       if (aValue < bValue) {
         return -1 * dir;
       } else if (aValue > bValue) {
         return 1 * dir;
       }
       return 0;
-    });
+    }).slice(0, 1000);
+  });
 
-    return sortedRows;
-  };
 
   // Make YAML
   const makeAllYaml = () => {
@@ -82,7 +86,8 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
     }
 
     rows().forEach((row) => {
-      commands.makeYaml(toDatDescriptor(row));
+      commands.makeYaml(toDatDescriptor(row), "English");
+      commands.makeYaml(toDatDescriptor(row), "Japanese");
     });
   };
 
@@ -103,7 +108,7 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
     }
 
     rows().forEach((row) => {
-      commands.makeDat(toDatDescriptor(row));
+      commands.makeDat(toDatDescriptor(row), "English");
     });
   };
 
@@ -155,13 +160,14 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
           <table class="table-auto">
             <thead>
               <tr>
-                {columns.map((col) => <th
-                  class="hover:cursor-pointer"
-                  onclick={() => updateSort(col.key)}
-                >
-                  {col.name}
-                </th>)}
-
+                <For each={columns}>
+                  {(col, idx) => (<th
+                    class="hover:cursor-pointer"
+                    onclick={() => updateSort(idx())}
+                  >
+                    {col.name}
+                  </th>)}
+                </For>
                 <th class="w-40">Export from DAT</th>
                 <th class="w-40">Generate DAT</th>
               </tr>
@@ -173,7 +179,9 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
                   const descriptor = toDatDescriptor(row);
                   return (
                     <tr class="hover:bg-slate-700">
-                      {columns.map((col) => <td>{row[col.key]}</td>)}
+                      <For each={columns}>
+                        {(col) => <td>{col.getter(row)}</td>}
+                      </For>
 
                       <Show
                         when={canProcess()}
@@ -193,27 +201,45 @@ function DatTable<T extends { [key in Column]: any }, Column extends keyof T & s
 
                             <Match when={true}>
                               <span
-                                class="clickable"
-                                onclick={async () => unwrap(await commands.makeYaml(descriptor))}
+                                class="clickable pl-2 font-mono"
+                                onclick={async () => unwrap(await commands.makeYaml(descriptor, "English"))}
                               >
-                                Export from DAT
+                                [EN]
                               </span>
+                              <Show when={hasJp(row)}>
+                                <span
+                                  class="clickable pl-2 font-mono"
+                                  onclick={async () => unwrap(await commands.makeYaml(descriptor, "Japanese"))}
+                                >
+                                  [JP]
+                                </span>
+                              </Show>
                             </Match>
                           </Switch>
                         </td>
                         <td>
                           <Switch>
-                            <Match when={hasWorkingFile(descriptor) && isProcessing("Dat", descriptor)}>
+                            <Match when={isProcessing("Dat", descriptor)}>
                               <span class="italic">Making...</span>
                             </Match>
 
-                            <Match when={hasWorkingFile(descriptor)}>
-                              <span
-                                class="clickable"
-                                onclick={async () => unwrap(await commands.makeDat(descriptor))}
-                              >
-                                Make DAT
-                              </span>
+                            <Match when={true}>
+                              <Show when={hasWorkingFile(descriptor, "English")}>
+                                <span
+                                  class="clickable pl-2 font-mono"
+                                  onclick={async () => unwrap(await commands.makeDat(descriptor, "English"))}
+                                >
+                                  [EN]
+                                </span>
+                              </Show>
+                              <Show when={hasJp(row) && hasWorkingFile(descriptor, "Japanese")}>
+                                <span
+                                  class="clickable pl-2 font-mono"
+                                  onclick={async () => unwrap(await commands.makeDat(descriptor, "Japanese"))}
+                                >
+                                  [JP]
+                                </span>
+                              </Show>
                             </Match>
                           </Switch>
                         </td>

@@ -23,7 +23,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9.25"
 glob = "0.3.1"
-dats = { path = "../../crates/dats" }
+dats = { path = "../../crates/dats", features = ["specta"] }
 processor = { path = "../../crates/processor" }
 project = { path = "../../crates/project" }
 anyhow = "1.0.72"

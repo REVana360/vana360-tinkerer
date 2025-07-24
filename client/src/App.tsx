@@ -103,9 +103,9 @@ function App() {
                   <DatTable
                     title="Strings"
                     rowsResourceFetcher={async () => unwrap(await commands.getStandaloneStringDats())}
-                    columns={[{ name: "Name", key: "type" }]}
-                    defaultSortColumn="type"
-                    toDatDescriptor={(datDescriptor) => datDescriptor}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
+                    hasJp={(v) => v.has_jp}
                   />
                 )}
               ></Route>
@@ -116,9 +116,9 @@ function App() {
                   <DatTable
                     title="Items"
                     rowsResourceFetcher={async () => unwrap(await commands.getItemDats())}
-                    columns={[{ name: "Name", key: "type" }]}
-                    defaultSortColumn="type"
-                    toDatDescriptor={(datDescriptor) => datDescriptor}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
+                    hasJp={(v) => v.has_jp}
                   />
                 )}
               ></Route>
@@ -129,9 +129,8 @@ function App() {
                   <DatTable
                     title="Misc."
                     rowsResourceFetcher={async () => unwrap(await commands.getMiscDats())}
-                    columns={[{ name: "Name", key: "type" }]}
-                    defaultSortColumn="type"
-                    toDatDescriptor={(datDescriptor) => datDescriptor}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
                   />
                 )}
               ></Route>
@@ -142,9 +141,9 @@ function App() {
                   <DatTable
                     title="Global Dialog"
                     rowsResourceFetcher={async () => unwrap(await commands.getGlobalDialogDats())}
-                    columns={[{ name: "Name", key: "type" }]}
-                    defaultSortColumn="type"
-                    toDatDescriptor={(datDescriptor) => datDescriptor}
+                    columns={[{ name: "Name", getter: (v) => v.descriptor.type }]}
+                    toDatDescriptor={(v) => v.descriptor}
+                    hasJp={(v) => v.has_jp}
                   />
                 )}
               ></Route>
@@ -181,8 +180,7 @@ function App() {
                   <DatTable
                     title="Entity Names"
                     rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "EntityNames", index: 0 }))}
-                    columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
-                    defaultSortColumn="name"
+                    columns={[{ name: "Name", getter: (v) => v.name }, { name: "ID", getter: (v) => v.id }]}
                     toDatDescriptor={(zone) => ({ type: "EntityNames", index: zone.id })}
                   />
                 )}
@@ -194,8 +192,7 @@ function App() {
                   <DatTable
                     title="Dialog"
                     rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "Dialog", index: 0 }))}
-                    columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
-                    defaultSortColumn="name"
+                    columns={[{ name: "Name", getter: (v) => v.name }, { name: "ID", getter: (v) => v.id }]}
                     toDatDescriptor={(zone) => ({ type: "Dialog", index: zone.id })}
                   />
                 )}
@@ -207,8 +204,7 @@ function App() {
                   <DatTable
                     title="Dialog (2)"
                     rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "Dialog2", index: 0 }))}
-                    columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
-                    defaultSortColumn="name"
+                    columns={[{ name: "Name", getter: (v) => v.name }, { name: "ID", getter: (v) => v.id }]}
                     toDatDescriptor={(zone) => ({ type: "Dialog2", index: zone.id })}
                   />
                 )}
@@ -220,8 +216,7 @@ function App() {
                   <DatTable
                     title="Events"
                     rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "Events", index: 0 }))}
-                    columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
-                    defaultSortColumn="name"
+                    columns={[{ name: "Name", getter: (v) => v.name }, { name: "ID", getter: (v) => v.id }]}
                     toDatDescriptor={(zone) => ({ type: "Events", index: zone.id })}
                   />
                 )}

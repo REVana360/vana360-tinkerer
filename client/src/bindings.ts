@@ -37,7 +37,7 @@ async loadPersistenceData() : Promise<Result<PersistenceData, any>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getMiscDats() : Promise<Result<DatDescriptor[], any>> {
+async getMiscDats() : Promise<Result<DatDescriptorInfo[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_misc_dats") };
 } catch (e) {
@@ -45,7 +45,7 @@ async getMiscDats() : Promise<Result<DatDescriptor[], any>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getStandaloneStringDats() : Promise<Result<DatDescriptor[], any>> {
+async getStandaloneStringDats() : Promise<Result<DatDescriptorInfo[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_standalone_string_dats") };
 } catch (e) {
@@ -53,7 +53,7 @@ async getStandaloneStringDats() : Promise<Result<DatDescriptor[], any>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getItemDats() : Promise<Result<DatDescriptor[], any>> {
+async getItemDats() : Promise<Result<DatDescriptorInfo[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_item_dats") };
 } catch (e) {
@@ -61,7 +61,7 @@ async getItemDats() : Promise<Result<DatDescriptor[], any>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getGlobalDialogDats() : Promise<Result<DatDescriptor[], any>> {
+async getGlobalDialogDats() : Promise<Result<DatDescriptorInfo[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_global_dialog_dats") };
 } catch (e) {
@@ -85,7 +85,7 @@ async getZonesForType(datDescriptor: DatDescriptor) : Promise<Result<ZoneInfo[],
     else return { status: "error", error: e  as any };
 }
 },
-async getWorkingFiles() : Promise<Result<DatDescriptor[], any>> {
+async getWorkingFiles() : Promise<Result<DatWithLang[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_working_files") };
 } catch (e) {
@@ -101,17 +101,17 @@ async makeAllDats() : Promise<Result<null, any>> {
     else return { status: "error", error: e  as any };
 }
 },
-async makeDat(datDescriptor: DatDescriptor) : Promise<Result<null, any>> {
+async makeDat(datDescriptor: DatDescriptor, lang: DatLanguage | null) : Promise<Result<null, any>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("make_dat", { datDescriptor }) };
+    return { status: "ok", data: await TAURI_INVOKE("make_dat", { datDescriptor, lang }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async makeYaml(datDescriptor: DatDescriptor) : Promise<Result<null, any>> {
+async makeYaml(datDescriptor: DatDescriptor, lang: DatLanguage | null) : Promise<Result<null, any>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("make_yaml", { datDescriptor }) };
+    return { status: "ok", data: await TAURI_INVOKE("make_yaml", { datDescriptor, lang }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -139,10 +139,13 @@ async copyLookupTables() : Promise<Result<null, any>> {
 
 export type BrowseInfo = { path: string; id: number }
 export type DatDescriptor = { type: "DataMenu" } | { type: "QuestsMissionsKeyItems" } | { type: "AbilityNames" } | { type: "AbilityDescriptions" } | { type: "AreaNames" } | { type: "AreaNamesShort" } | { type: "AreaNamesAlt" } | { type: "Augments" } | { type: "BlueMagic" } | { type: "CallMount" } | { type: "CharacterSelect" } | { type: "ChatFilterTypes" } | { type: "ChocoboNames" } | { type: "CommandUsage" } | { type: "DayNames" } | { type: "Directions" } | { type: "EinherjarChambers" } | { type: "Emotes" } | { type: "EquipmentLocations" } | { type: "EquipmentLocationsAlt" } | { type: "ErrorMessages" } | { type: "IngameMessages1" } | { type: "IngameMessages2" } | { type: "JobNames" } | { type: "JobNamesShort" } | { type: "JobPointBonuses" } | { type: "JobPointGifts" } | { type: "KeyItems" } | { type: "MenuItemsDescription" } | { type: "MenuItemsText" } | { type: "Merits" } | { type: "MissionsAcp" } | { type: "MissionsAmke" } | { type: "MissionsAsa" } | { type: "MissionsAssault" } | { type: "MissionsBastok" } | { type: "MissionsCampaign" } | { type: "MissionsCop" } | { type: "MissionsRov" } | { type: "MissionsSandoria" } | { type: "MissionsSoa" } | { type: "MissionsToau" } | { type: "MissionsWindurst" } | { type: "MissionsWotg" } | { type: "MissionsZilart" } | { type: "MoblinMazeMongers" } | { type: "Modifiers" } | { type: "MonsterFamilies" } | { type: "MoonPhases" } | { type: "MountNames" } | { type: "PankrationNames" } | { type: "PolMessages" } | { type: "QuestsAbyssea" } | { type: "QuestsBastok" } | { type: "QuestsCoalition" } | { type: "QuestsJeuno" } | { type: "QuestsOther" } | { type: "QuestsOutlands" } | { type: "QuestsSandoria" } | { type: "QuestsSoa" } | { type: "QuestsToau" } | { type: "QuestsWindurst" } | { type: "QuestsWotg" } | { type: "RaceNames" } | { type: "RegionNames" } | { type: "ServerNames" } | { type: "SpellNames" } | { type: "SpellDescriptions" } | { type: "StatusInfo" } | { type: "StatusNames" } | { type: "TimeAndPronouns" } | { type: "Titles" } | { type: "TrustMessages" } | { type: "Misc1" } | { type: "Misc2" } | { type: "WeatherTypes" } | { type: "Armor" } | { type: "Armor2" } | { type: "Currency" } | { type: "GeneralItems" } | { type: "GeneralItems2" } | { type: "PuppetItems" } | { type: "UsableItems" } | { type: "Weapons" } | { type: "VouchersAndSlips" } | { type: "Monipulator" } | { type: "Instincts" } | { type: "MonsterSkillNames" } | { type: "StatusNamesDialog" } | { type: "EmoteMessages" } | { type: "SystemMessages1" } | { type: "SystemMessages2" } | { type: "SystemMessages3" } | { type: "SystemMessages4" } | { type: "UnityDialogs" } | { type: "ZoneData"; index: number } | { type: "EntityNames"; index: number } | { type: "Dialog"; index: number } | { type: "Dialog2"; index: number } | { type: "Events"; index: number }
+export type DatDescriptorInfo = { descriptor: DatDescriptor; has_jp: boolean }
+export type DatLanguage = "English" | "Japanese"
 export type DatProcessingState = "Working" | { Finished: string } | { Error: string }
 export type DatProcessorMessage = { dat_descriptor: DatDescriptor; output_kind: DatProcessorOutputKind; state: DatProcessingState }
 export type DatProcessorOutputKind = "Dat" | "Yaml"
-export type FileNotification = { dat_descriptor: DatDescriptor; is_delete: boolean }
+export type DatWithLang = { descriptor: DatDescriptor; lang: DatLanguage }
+export type FileNotification = { dat: DatWithLang; is_delete: boolean }
 export type PersistenceData = { ffxi_path: string | null; recent_projects: string[] }
 export type ZoneInfo = { id: number; name: string; dat_path: string }
 

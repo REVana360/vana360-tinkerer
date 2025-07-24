@@ -37,7 +37,7 @@ impl DatId {
 }
 
 #[derive(Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Dat<T: DatFormat> {
+pub struct Dat<T: DatFormat + ?Sized> {
     raw_id: DatId,
     _pd: PhantomData<fn() -> T>,
 }

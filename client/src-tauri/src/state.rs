@@ -6,10 +6,10 @@ use std::{
 };
 
 use anyhow::Result;
-use dats::context::DatContext;
+use dats::{context::DatContext, id_mapping::DatWithLang};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
-use processor::{dat_descriptor::DatDescriptor, processor::DatProcessor};
+use processor::{dat_yaml_util::DatYamlUtil, processor::DatProcessor};
 use serde::Serialize;
 use tauri::{App, AppHandle, Emitter, Manager, async_runtime};
 
@@ -27,7 +27,7 @@ pub struct AppStateData {
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct FileNotification {
-    dat_descriptor: DatDescriptor,
+    dat: DatWithLang,
     is_delete: bool,
 }
 
@@ -164,11 +164,8 @@ impl AppStateData {
             .collect::<Vec<_>>();
 
         for path in raw_data_paths {
-            if let Some(dat_descriptor) = Self::get_file_dat_descriptor(&path, &app_state) {
-                let notification = FileNotification {
-                    dat_descriptor,
-                    is_delete,
-                };
+            if let Some(dat) = Self::get_file_dat(&path, &app_state) {
+                let notification = FileNotification { dat, is_delete };
                 let _ = app_handle.emit("file-change", notification);
             }
         }
@@ -176,7 +173,7 @@ impl AppStateData {
         Some(())
     }
 
-    fn get_file_dat_descriptor(path: &PathBuf, app_state: &AppState) -> Option<DatDescriptor> {
+    fn get_file_dat(path: &PathBuf, app_state: &AppState) -> Option<DatWithLang> {
         if path.is_dir() || path.extension() != Some(OsStr::new("yml")) {
             return None;
         }
@@ -184,7 +181,7 @@ impl AppStateData {
         let dat_context = app_state.read().dat_context.clone()?;
         let raw_data_dir = app_state.read().project_path.clone()?.join(RAW_DATA_DIR);
 
-        DatDescriptor::from_path(path, &raw_data_dir, &dat_context)
+        DatYamlUtil::dat_from_path(path, &raw_data_dir, &dat_context)
     }
 }
 

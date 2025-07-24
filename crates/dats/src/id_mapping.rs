@@ -1,13 +1,102 @@
 use std::sync::OnceLock;
 
 use crate::{
-    base::{Dat, DatByZone},
+    base::{Dat, DatByZone, ZoneId},
+    dat_format::DatFormat,
     formats::{
         dialog::Dialog, dmsg_table::DmsgTable, entity_names::EntityNames, events::Events,
         item_info::ItemInfoTable, menu_table::MenuTable, status_info::StatusInfoTable,
         xistring_table::XiStringTable, zone_data::ZoneData,
     },
 };
+use serde::{Deserialize, Serialize};
+
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+pub enum DatLanguage {
+    #[default]
+    English,
+    Japanese,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+pub struct DatWithLang {
+    pub descriptor: DatDescriptor,
+    pub lang: DatLanguage,
+}
+
+impl DatWithLang {
+    pub fn new(descriptor: DatDescriptor, lang: DatLanguage) -> Self {
+        Self { descriptor, lang }
+    }
+}
+
+impl From<DatDescriptor> for DatWithLang {
+    fn from(descriptor: DatDescriptor) -> Self {
+        DatWithLang {
+            descriptor,
+            lang: DatLanguage::English,
+        }
+    }
+}
+
+pub trait DatUsage<U> {
+    fn use_dat<T: DatFormat + Serialize + for<'a> serde::Deserialize<'a>>(
+        self,
+        dat: Dat<T>,
+    ) -> anyhow::Result<U>;
+}
+
+macro_rules! define_dat_mappings {
+    (
+        simple: {
+            $($variant:ident => $dat_format:ident($dat_id_en:literal$(, $dat_id_jp:literal)?)),* $(,)?
+        }
+        $(, zones: {
+            $($zone_variant:ident => $zone_dat_field:ident),* $(,)?
+        })?
+    ) => {
+        #[derive(
+            Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+        )]
+        #[cfg_attr(feature = "specta", derive(specta::Type))]
+        #[serde(tag = "type", content = "index")]
+        pub enum DatDescriptor {
+            $($variant,)*
+            $($($zone_variant(ZoneId),)*)?
+        }
+
+        impl DatDescriptor {
+            pub fn use_dat_with<T: DatUsage<U>, U>(&self, dat_user: T) -> anyhow::Result<U> {
+                match self {
+                    $(Self::$variant => dat_user.use_dat(Dat::<$dat_format>::from($dat_id_en)),)*
+                    $($(
+                        Self::$zone_variant(zone_id) => {
+                            dat_user.use_dat(DatIdMapping::get().$zone_dat_field.get_result(&zone_id)?.clone())
+                        }
+                    )*)?
+                }
+            }
+
+            pub const fn has_jp_dat(&self) -> bool {
+                match self {
+                    $($(Self::$variant => $dat_id_jp > 0,)*)*
+                    _ => false
+                }
+            }
+
+            pub fn use_jp_dat_with<T: DatUsage<U>, U>(&self, dat_user: T) -> anyhow::Result<U> {
+                match self {
+                    $($(Self::$variant => dat_user.use_dat(Dat::<$dat_format>::from($dat_id_jp)),)*)*
+                    _ => Err(anyhow::anyhow!("JP DAT not mapped."))
+                }
+            }
+        }
+    };
+}
 
 #[derive(Debug)]
 pub struct DatIdMapping {
@@ -18,108 +107,7 @@ pub struct DatIdMapping {
     pub dialog2: DatByZone<Dialog>,
     pub events: DatByZone<Events>,
 
-    // Global dialog
-    pub monster_skill_names: Dat<Dialog>,
-    pub status_names_dialog: Dat<Dialog>,
-    pub emote_messages: Dat<Dialog>,
-    pub system_messages_1: Dat<Dialog>,
-    pub system_messages_2: Dat<Dialog>,
-    pub system_messages_3: Dat<Dialog>,
-    pub system_messages_4: Dat<Dialog>,
-    pub unity_dialogs: Dat<Dialog>,
-
-    // String tables
-    pub ability_names: Dat<DmsgTable>,
-    pub ability_descriptions: Dat<DmsgTable>,
     pub area_names: Dat<DmsgTable>,
-    pub area_names_short: Dat<DmsgTable>,
-    pub area_names_alt: Dat<DmsgTable>,
-    pub augments: Dat<DmsgTable>,
-    pub blue_magic: Dat<DmsgTable>,
-    pub call_mount: Dat<DmsgTable>,
-    pub character_select: Dat<DmsgTable>,
-    pub chat_filter_types: Dat<DmsgTable>,
-    pub chocobo_names: Dat<DmsgTable>,
-    pub command_usage: Dat<DmsgTable>,
-    pub day_names: Dat<DmsgTable>,
-    pub directions: Dat<DmsgTable>,
-    pub einherjar_chambers: Dat<DmsgTable>,
-    pub emotes: Dat<DmsgTable>,
-    pub equipment_locations: Dat<DmsgTable>,
-    pub equipment_locations_alt: Dat<DmsgTable>,
-    pub error_messages: Dat<DmsgTable>,
-    pub ingame_messages_1: Dat<DmsgTable>,
-    pub ingame_messages_2: Dat<XiStringTable>,
-    pub job_names: Dat<DmsgTable>,
-    pub job_names_short: Dat<DmsgTable>,
-    pub job_point_bonuses: Dat<DmsgTable>,
-    pub job_point_gifts: Dat<DmsgTable>,
-    pub key_items: Dat<DmsgTable>,
-    pub menu_items_description: Dat<DmsgTable>,
-    pub menu_items_text: Dat<DmsgTable>,
-    pub merits: Dat<DmsgTable>,
-    pub missions_acp: Dat<DmsgTable>,
-    pub missions_amke: Dat<DmsgTable>,
-    pub missions_asa: Dat<DmsgTable>,
-    pub missions_assault: Dat<DmsgTable>,
-    pub missions_bastok: Dat<DmsgTable>,
-    pub missions_campaign: Dat<DmsgTable>,
-    pub missions_cop: Dat<DmsgTable>,
-    pub missions_rov: Dat<DmsgTable>,
-    pub missions_sandoria: Dat<DmsgTable>,
-    pub missions_soa: Dat<DmsgTable>,
-    pub missions_toau: Dat<DmsgTable>,
-    pub missions_windurst: Dat<DmsgTable>,
-    pub missions_wotg: Dat<DmsgTable>,
-    pub missions_zilart: Dat<DmsgTable>,
-    pub moblin_maze_mongers: Dat<DmsgTable>,
-    pub modifiers: Dat<DmsgTable>,
-    pub monster_families: Dat<DmsgTable>,
-    pub moon_phases: Dat<DmsgTable>,
-    pub mount_names: Dat<DmsgTable>,
-    pub pankration_names: Dat<DmsgTable>,
-    pub pol_messages: Dat<XiStringTable>,
-    pub quests_abyssea: Dat<DmsgTable>,
-    pub quests_bastok: Dat<DmsgTable>,
-    pub quests_coalition: Dat<DmsgTable>,
-    pub quests_jeuno: Dat<DmsgTable>,
-    pub quests_other: Dat<DmsgTable>,
-    pub quests_outlands: Dat<DmsgTable>,
-    pub quests_sandoria: Dat<DmsgTable>,
-    pub quests_soa: Dat<DmsgTable>,
-    pub quests_toau: Dat<DmsgTable>,
-    pub quests_windurst: Dat<DmsgTable>,
-    pub quests_wotg: Dat<DmsgTable>,
-    pub race_names: Dat<DmsgTable>,
-    pub region_names: Dat<DmsgTable>,
-    pub server_names: Dat<DmsgTable>,
-    pub spell_names: Dat<DmsgTable>,
-    pub spell_descriptions: Dat<DmsgTable>,
-    pub status_info: Dat<StatusInfoTable>,
-    pub status_names: Dat<DmsgTable>,
-    pub time_and_pronouns: Dat<XiStringTable>,
-    pub titles: Dat<DmsgTable>,
-    pub trust_messages: Dat<DmsgTable>,
-    pub misc1: Dat<DmsgTable>,
-    pub misc2: Dat<DmsgTable>,
-    pub weather_types: Dat<DmsgTable>,
-
-    // Item data
-    pub armor: Dat<ItemInfoTable>,
-    pub armor2: Dat<ItemInfoTable>,
-    pub currency: Dat<ItemInfoTable>,
-    pub general_items: Dat<ItemInfoTable>,
-    pub general_items2: Dat<ItemInfoTable>,
-    pub puppet_items: Dat<ItemInfoTable>,
-    pub usable_items: Dat<ItemInfoTable>,
-    pub weapons: Dat<ItemInfoTable>,
-    pub vouchers_and_slips: Dat<ItemInfoTable>,
-    pub monipulator: Dat<ItemInfoTable>,
-    pub instincts: Dat<ItemInfoTable>,
-
-    // Misc data
-    pub data_menu: Dat<MenuTable>,
-    pub quests_mission_keyitems: Dat<MenuTable>,
 }
 
 static DAT_ID_MAPPING: OnceLock<DatIdMapping> = OnceLock::new();
@@ -187,109 +175,122 @@ impl DatIdMapping {
                 dialog2,
                 events,
 
-                // Global dialog
-                monster_skill_names: 07035.into(),
-                status_names_dialog: 07029.into(),
-                emote_messages: 07025.into(),
-                system_messages_1: 07023.into(),
-                system_messages_2: 07031.into(),
-                system_messages_3: 07021.into(),
-                system_messages_4: 07027.into(),
-                unity_dialogs: 07039.into(),
-
-                // String tables
-                ability_names: 55701.into(),
-                ability_descriptions: 55733.into(),
                 area_names: 55465.into(),
-                area_names_short: 55466.into(),
-                area_names_alt: 55661.into(),
-                augments: 55692.into(),
-                blue_magic: 55685.into(),
-                call_mount: 55682.into(),
-                character_select: 55470.into(),
-                chat_filter_types: 55650.into(),
-                chocobo_names: 55474.into(),
-                command_usage: 55687.into(),
-                day_names: 55658.into(),
-                directions: 55659.into(),
-                einherjar_chambers: 55472.into(),
-                emotes: 55675.into(),
-                equipment_locations: 55471.into(),
-                equipment_locations_alt: 55666.into(),
-                error_messages: 55646.into(),
-                ingame_messages_1: 55648.into(),
-                ingame_messages_2: 55649.into(),
-                job_names: 55467.into(),
-                job_names_short: 55468.into(),
-                job_point_bonuses: 55694.into(),
-                job_point_gifts: 55674.into(),
-                key_items: 55695.into(),
-                menu_items_description: 55651.into(),
-                menu_items_text: 55652.into(),
-                merits: 55686.into(),
-                missions_acp: 55735.into(),
-                missions_amke: 55736.into(),
-                missions_asa: 55737.into(),
-                missions_assault: 55720.into(),
-                missions_bastok: 55716.into(),
-                missions_campaign: 55724.into(),
-                missions_cop: 55719.into(),
-                missions_rov: 55741.into(),
-                missions_sandoria: 55715.into(),
-                missions_soa: 55738.into(),
-                missions_toau: 55721.into(),
-                missions_windurst: 55717.into(),
-                missions_wotg: 55723.into(),
-                missions_zilart: 55718.into(),
-                moblin_maze_mongers: 55691.into(),
-                modifiers: 55689.into(),
-                monster_families: 55690.into(),
-                moon_phases: 55660.into(),
-                mount_names: 55681.into(),
-                pankration_names: 55473.into(),
-                pol_messages: 55647.into(),
-                quests_abyssea: 55713.into(),
-                quests_bastok: 55707.into(),
-                quests_coalition: 55740.into(),
-                quests_jeuno: 55709.into(),
-                quests_other: 55710.into(),
-                quests_outlands: 55711.into(),
-                quests_sandoria: 55706.into(),
-                quests_soa: 55739.into(),
-                quests_toau: 55712.into(),
-                quests_windurst: 55708.into(),
-                quests_wotg: 55722.into(),
-                race_names: 55469.into(),
-                region_names: 55654.into(),
-                server_names: 55680.into(),
-                spell_names: 55702.into(),
-                spell_descriptions: 55734.into(),
-                status_info: 00087.into(),
-                status_names: 55725.into(),
-                time_and_pronouns: 00063.into(),
-                titles: 55704.into(),
-                trust_messages: 55693.into(),
-                misc1: 55645.into(),
-                misc2: 55653.into(),
-                weather_types: 55657.into(),
-
-                // Item data
-                armor: 00076.into(),
-                armor2: 55668.into(),
-                currency: 00091.into(),
-                general_items: 00073.into(),
-                general_items2: 55671.into(),
-                puppet_items: 00077.into(),
-                usable_items: 00074.into(),
-                weapons: 00075.into(),
-                vouchers_and_slips: 55667.into(),
-                monipulator: 55669.into(),
-                instincts: 55670.into(),
-
-                // Misc. data
-                data_menu: 81.into(),
-                quests_mission_keyitems: 82.into(),
             }
         })
+    }
+}
+
+define_dat_mappings! {
+    simple: {
+        DataMenu => MenuTable(81),
+        QuestsMissionsKeyItems => MenuTable(82),
+
+        // String tables
+        AbilityNames => DmsgTable(55701, 55581),
+        AbilityDescriptions => DmsgTable(55733, 55613),
+        AreaNames => DmsgTable(55465, 55535),
+        AreaNamesShort => DmsgTable(55466),
+        AreaNamesAlt => DmsgTable(55661),
+        Augments => DmsgTable(55692, 55572),
+        BlueMagic => DmsgTable(55685, 55565),
+        CallMount => DmsgTable(55682, 55562),
+        CharacterSelect => DmsgTable(55470),
+        ChatFilterTypes => DmsgTable(55650, 55530),
+        ChocoboNames => DmsgTable(55474),
+        CommandUsage => DmsgTable(55687, 55567),
+        DayNames => DmsgTable(55658, 55538),
+        Directions => DmsgTable(55659, 55539),
+        EinherjarChambers => DmsgTable(55472),
+        Emotes => DmsgTable(55675, 55555),
+        EquipmentLocations => DmsgTable(55471),
+        EquipmentLocationsAlt => DmsgTable(55666),
+        ErrorMessages => DmsgTable(55646, 55526),
+        IngameMessages1 => DmsgTable(55648, 55528),
+        IngameMessages2 => XiStringTable(55649),
+        JobNames => DmsgTable(55467, 55536),
+        JobNamesShort => DmsgTable(55468),
+        JobPointBonuses => DmsgTable(55694, 55574),
+        JobPointGifts => DmsgTable(55674, 55554),
+        KeyItems => DmsgTable(55695, 55575),
+        MenuItemsDescription => DmsgTable(55651, 55531),
+        MenuItemsText => DmsgTable(55652, 55532),
+        Merits => DmsgTable(55686, 55566),
+        MissionsAcp => DmsgTable(55735, 55615),
+        MissionsAmke => DmsgTable(55736, 55616),
+        MissionsAsa => DmsgTable(55737, 55617),
+        MissionsAssault => DmsgTable(55720, 55600),
+        MissionsBastok => DmsgTable(55716, 55596),
+        MissionsCampaign => DmsgTable(55724, 55604),
+        MissionsCop => DmsgTable(55719, 55599),
+        MissionsRov => DmsgTable(55741, 55621),
+        MissionsSandoria => DmsgTable(55715, 55595),
+        MissionsSoa => DmsgTable(55738, 55618),
+        MissionsToau => DmsgTable(55721, 55601),
+        MissionsWindurst => DmsgTable(55717, 55597),
+        MissionsWotg => DmsgTable(55723, 55603),
+        MissionsZilart => DmsgTable(55718, 55598),
+        MoblinMazeMongers => DmsgTable(55691, 55571),
+        Modifiers => DmsgTable(55689, 55569),
+        MonsterFamilies => DmsgTable(55690, 55570),
+        MoonPhases => DmsgTable(55660, 55540),
+        MountNames => DmsgTable(55681),
+        PankrationNames => DmsgTable(55473),
+        PolMessages => XiStringTable(55647),
+        QuestsAbyssea => DmsgTable(55713, 55593),
+        QuestsBastok => DmsgTable(55707, 55587),
+        QuestsCoalition => DmsgTable(55740, 55620),
+        QuestsJeuno => DmsgTable(55709, 55589),
+        QuestsOther => DmsgTable(55710, 55590),
+        QuestsOutlands => DmsgTable(55711, 55591),
+        QuestsSandoria => DmsgTable(55706, 55586),
+        QuestsSoa => DmsgTable(55739, 55619),
+        QuestsToau => DmsgTable(55712, 55592),
+        QuestsWindurst => DmsgTable(55708, 55588),
+        QuestsWotg => DmsgTable(55722, 55602),
+        RaceNames => DmsgTable(55469),
+        RegionNames => DmsgTable(55654, 55534),
+        ServerNames => DmsgTable(55680, 55560),
+        SpellNames => DmsgTable(55702, 55582),
+        SpellDescriptions => DmsgTable(55734, 55614),
+        StatusInfo => StatusInfoTable(87),
+        StatusNames => DmsgTable(55725, 55605),
+        TimeAndPronouns => XiStringTable(63),
+        Titles => DmsgTable(55704, 55584),
+        TrustMessages => DmsgTable(55693, 55573),
+        Misc1 => DmsgTable(55645, 55525),
+        Misc2 => DmsgTable(55653, 55533),
+        WeatherTypes => DmsgTable(55657, 55537),
+
+        // Items
+        Armor => ItemInfoTable(76, 7),
+        Armor2 => ItemInfoTable(55668, 55548),
+        Currency => ItemInfoTable(91),
+        GeneralItems => ItemInfoTable(73, 4),
+        GeneralItems2 => ItemInfoTable(55671, 55551),
+        PuppetItems => ItemInfoTable(77, 8),
+        UsableItems => ItemInfoTable(74, 5),
+        Weapons => ItemInfoTable(75, 6),
+        VouchersAndSlips => ItemInfoTable(55667),
+        Monipulator => ItemInfoTable(55669),
+        Instincts => ItemInfoTable(55670),
+
+        // Global dialog
+        MonsterSkillNames => Dialog(7035),
+        StatusNamesDialog => Dialog(7029),
+        EmoteMessages => Dialog(7025),
+        SystemMessages1 => Dialog(7023),
+        SystemMessages2 => Dialog(7031),
+        SystemMessages3 => Dialog(7021),
+        SystemMessages4 => Dialog(7027),
+        UnityDialogs => Dialog(7039),
+    },
+
+    zones: {
+        ZoneData => zone_data,
+        EntityNames => entities,
+        Dialog => dialog,
+        Dialog2 => dialog2,
+        Events => events,
     }
 }

@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Result, anyhow};
 use dats::context::{DatContext, ZoneName};
 use processor::{
-    dat_descriptor::DatDescriptor,
+    dat_yaml_util::DatYamlUtil,
     processor::{DatProcessingState, DatProcessor},
 };
 use project::{DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE};
@@ -46,8 +46,8 @@ pub fn make_dats(
         total_count = processor.all_yaml_to_dats(dat_context, &in_dir, &out_dir);
     } else {
         // Try to generate from specified yaml files
-        let dat_descriptors = yaml_paths.iter().filter_map(|path| {
-            match DatDescriptor::from_path(&path, &in_dir, &dat_context) {
+        let dats = yaml_paths.iter().filter_map(|path| {
+            match DatYamlUtil::dat_from_path(&path, &in_dir, &dat_context) {
                 Some(descriptor) => Some(descriptor),
                 None => {
                     eprintln!(
@@ -59,9 +59,10 @@ pub fn make_dats(
             }
         });
 
-        for dat_descriptor in dat_descriptors {
+        for dat in dats {
             processor.yaml_to_dat(
-                dat_descriptor,
+                dat.descriptor,
+                dat.lang,
                 dat_context.clone(),
                 in_dir.clone(),
                 out_dir.clone(),

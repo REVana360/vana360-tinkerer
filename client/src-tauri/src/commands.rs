@@ -5,15 +5,16 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
+use dats::id_mapping::{DatDescriptor, DatLanguage, DatWithLang};
 use processor::{
-    dat_descriptor::DatDescriptor, processor::DatProcessorMessage, ximesh::get_ximesh_bytes,
+    dat_yaml_util::DatYamlUtil, processor::DatProcessorMessage, ximesh::get_ximesh_bytes,
 };
 use tracing_subscriber::fmt::MakeWriter;
 
 use crate::{
     DAT_GENERATION_DIR, LOOKUP_TABLE_DIR, RAW_DATA_DIR, ZONE_MAPPING_FILE,
     app_persistence::PersistenceData,
-    dat_query::{self, BrowseInfo, ZoneInfo},
+    dat_query::{self, BrowseInfo, DatDescriptorInfo, ZoneInfo},
     errors::AppError,
     state::{AppState, FileNotification},
 };
@@ -95,31 +96,31 @@ pub async fn get_zone_model(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_misc_dats() -> Result<Vec<DatDescriptor>, AppError> {
-    Ok(dat_query::get_misc_dats())
+pub async fn get_misc_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::MISC_DATS)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_standalone_string_dats() -> Result<Vec<DatDescriptor>, AppError> {
-    Ok(dat_query::get_standalone_string_dats())
+pub async fn get_standalone_string_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::STANDALONE_DATS)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_item_dats() -> Result<Vec<DatDescriptor>, AppError> {
-    Ok(dat_query::get_item_dats())
+pub async fn get_item_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::ITEM_DATS)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_global_dialog_dats() -> Result<Vec<DatDescriptor>, AppError> {
-    Ok(dat_query::get_global_dialog_dats())
+pub async fn get_global_dialog_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
+    Ok(dat_query::GLOBAL_DIALOG_DATS)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_working_files(state: AppState<'_>) -> Result<Vec<DatDescriptor>, AppError> {
+pub async fn get_working_files(state: AppState<'_>) -> Result<Vec<DatWithLang>, AppError> {
     let dat_context = state
         .read()
         .dat_context
@@ -138,7 +139,7 @@ pub async fn get_working_files(state: AppState<'_>) -> Result<Vec<DatDescriptor>
         .into_iter()
         .filter_map(|entry| {
             let entry = entry.ok()?;
-            DatDescriptor::from_path(&entry.into_path(), &raw_data_dir, &dat_context)
+            DatYamlUtil::dat_from_path(&entry.into_path(), &raw_data_dir, &dat_context)
         })
         .collect())
 }
@@ -168,14 +169,16 @@ pub async fn make_all_dats(state: AppState<'_>) -> Result<(), AppError> {
         .into_iter()
         .filter_map(|entry| {
             let entry = entry.ok()?;
-            DatDescriptor::from_path(&entry.into_path(), &raw_data_dir, &dat_context)
+            DatYamlUtil::dat_from_path(&entry.into_path(), &raw_data_dir, &dat_context)
         })
-        .for_each(|dat_descriptor| {
+        .for_each(|dat| {
             let dat_context = dat_context.clone();
             let raw_data_root_path = raw_data_dir.clone();
             let dat_root_path = dat_root_path.clone();
+
             processor.yaml_to_dat(
-                dat_descriptor,
+                dat.descriptor,
+                dat.lang,
                 dat_context,
                 raw_data_root_path,
                 dat_root_path,
@@ -185,7 +188,11 @@ pub async fn make_all_dats(state: AppState<'_>) -> Result<(), AppError> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn make_dat(dat_descriptor: DatDescriptor, state: AppState<'_>) -> Result<(), AppError> {
+pub async fn make_dat(
+    dat_descriptor: DatDescriptor,
+    lang: Option<DatLanguage>,
+    state: AppState<'_>,
+) -> Result<(), AppError> {
     let dat_context = state
         .read()
         .dat_context
@@ -203,6 +210,7 @@ pub async fn make_dat(dat_descriptor: DatDescriptor, state: AppState<'_>) -> Res
 
     processor.yaml_to_dat(
         dat_descriptor,
+        lang.unwrap_or(DatLanguage::English),
         dat_context,
         project_path.join(RAW_DATA_DIR),
         project_path.join(DAT_GENERATION_DIR),
@@ -213,7 +221,11 @@ pub async fn make_dat(dat_descriptor: DatDescriptor, state: AppState<'_>) -> Res
 
 #[tauri::command]
 #[specta::specta]
-pub async fn make_yaml(dat_descriptor: DatDescriptor, state: AppState<'_>) -> Result<(), AppError> {
+pub async fn make_yaml(
+    dat_descriptor: DatDescriptor,
+    lang: Option<DatLanguage>,
+    state: AppState<'_>,
+) -> Result<(), AppError> {
     let dat_context = state
         .read()
         .dat_context
@@ -229,7 +241,12 @@ pub async fn make_yaml(dat_descriptor: DatDescriptor, state: AppState<'_>) -> Re
 
     let processor = state.read().processor.clone();
 
-    processor.dat_to_yaml(dat_descriptor, dat_context, project_path.join(RAW_DATA_DIR));
+    processor.dat_to_yaml(
+        dat_descriptor,
+        lang.unwrap_or(DatLanguage::English),
+        dat_context,
+        project_path.join(RAW_DATA_DIR),
+    );
 
     Ok(())
 }

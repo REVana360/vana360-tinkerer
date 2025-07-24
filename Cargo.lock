@@ -760,6 +760,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_yaml",
+ "specta",
  "thiserror 2.0.11",
 ]
 

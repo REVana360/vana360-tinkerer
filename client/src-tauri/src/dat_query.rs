@@ -6,23 +6,49 @@ use dats::{
     context::DatContext,
     dat_format::DatFormat,
     formats::zone_data::zone_model::ZoneCollisionMesh,
-    id_mapping::DatIdMapping,
+    id_mapping::{DatDescriptor, DatIdMapping},
 };
-use processor::dat_descriptor::DatDescriptor;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::async_runtime;
 
 use crate::errors::AppError;
 
-pub fn get_misc_dats() -> Vec<DatDescriptor> {
-    vec![
-        DatDescriptor::DataMenu,
-        DatDescriptor::QuestsMissionsKeyItems,
-    ]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, specta::Type,
+)]
+pub struct DatDescriptorInfo {
+    descriptor: DatDescriptor,
+    has_jp: bool,
 }
 
-pub fn get_standalone_string_dats() -> Vec<DatDescriptor> {
-    vec![
+const fn to_info(descriptor: DatDescriptor) -> DatDescriptorInfo {
+    DatDescriptorInfo {
+        descriptor,
+        has_jp: descriptor.has_jp_dat(),
+    }
+}
+
+const fn to_infos<const N: usize>(source: [DatDescriptor; N]) -> [DatDescriptorInfo; N] {
+    let mut result: [DatDescriptorInfo; N] = [to_info(DatDescriptor::MonsterSkillNames); N];
+
+    let mut i = 0;
+    while i < N {
+        result[i] = to_info(source[i]);
+        i += 1;
+    }
+
+    result
+}
+
+pub static MISC_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
+        DatDescriptor::DataMenu,
+        DatDescriptor::QuestsMissionsKeyItems,
+    ])
+};
+
+pub static STANDALONE_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
         DatDescriptor::AbilityNames,
         DatDescriptor::AbilityDescriptions,
         DatDescriptor::AreaNames,
@@ -96,11 +122,11 @@ pub fn get_standalone_string_dats() -> Vec<DatDescriptor> {
         DatDescriptor::Misc1,
         DatDescriptor::Misc2,
         DatDescriptor::WeatherTypes,
-    ]
-}
+    ])
+};
 
-pub fn get_item_dats() -> Vec<DatDescriptor> {
-    vec![
+pub static ITEM_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
         DatDescriptor::Armor,
         DatDescriptor::Armor2,
         // DatDescriptor::Currency, // TODO: can't currently parse this
@@ -112,11 +138,11 @@ pub fn get_item_dats() -> Vec<DatDescriptor> {
         DatDescriptor::VouchersAndSlips,
         // DatDescriptor::Monipulator, // TODO: fields seems to be very different compared to other items
         DatDescriptor::Instincts,
-    ]
-}
+    ])
+};
 
-pub fn get_global_dialog_dats() -> Vec<DatDescriptor> {
-    vec![
+pub static GLOBAL_DIALOG_DATS: &'static [DatDescriptorInfo] = {
+    &to_infos([
         DatDescriptor::MonsterSkillNames,
         DatDescriptor::StatusNamesDialog,
         DatDescriptor::EmoteMessages,
@@ -125,8 +151,8 @@ pub fn get_global_dialog_dats() -> Vec<DatDescriptor> {
         DatDescriptor::SystemMessages3,
         DatDescriptor::SystemMessages4,
         DatDescriptor::UnityDialogs,
-    ]
-}
+    ])
+};
 
 #[derive(Serialize, specta::Type)]
 pub struct ZoneInfo {

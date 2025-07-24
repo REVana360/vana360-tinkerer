@@ -82,6 +82,9 @@ pub enum ItemStrings {
     },
 
     #[serde(untagged)]
+    Japanese { name: String, description: String },
+
+    #[serde(untagged)]
     Name { name: String },
 }
 
@@ -416,6 +419,13 @@ impl ItemInfo {
                     name: Self::read_string(&mut data_walker)?,
                 });
             }
+            2 => {
+                // Japanese
+                item_info.strings = Some(ItemStrings::Japanese {
+                    name: Self::read_string(&mut data_walker)?,
+                    description: Self::read_string(&mut data_walker)?,
+                });
+            }
             5 => {
                 // English
                 item_info.strings = Some(ItemStrings::English {
@@ -533,6 +543,10 @@ impl ItemInfo {
         match &self.strings {
             Some(ItemStrings::Name { name }) => {
                 string_content.push(ItemStringContent::from_string(name)?);
+            }
+            Some(ItemStrings::Japanese { name, description }) => {
+                string_content.push(ItemStringContent::from_string(name)?);
+                string_content.push(ItemStringContent::from_string(description)?);
             }
             Some(ItemStrings::English {
                 name,
@@ -713,6 +727,27 @@ mod tests {
             );
         } else {
             panic!("Expected english strings")
+        }
+    }
+
+    #[test]
+    pub fn armor_jp() {
+        let mut dat_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        dat_path.push("resources/test/armor_jp.DAT");
+
+        ItemInfoTable::check_path(&dat_path).unwrap();
+        let res = ItemInfoTable::from_path_checked_yaml(&dat_path).unwrap();
+
+        if let ItemStrings::Japanese { name, description } =
+            res.items[2221].strings.as_ref().unwrap()
+        {
+            assert_eq!(name, "スコピオヘルム+1");
+            assert_eq!(
+                description,
+                "防23 耐火+8 レジストパライズ効果アップ\n麻痺:リフレシュ"
+            );
+        } else {
+            panic!("Expected japanese strings")
         }
     }
 }

@@ -3,10 +3,14 @@ use std::{
     sync::{Arc, Mutex, mpsc::Sender},
 };
 
-use crate::dat_descriptor::DatDescriptor;
-use dats::context::DatContext;
+use dats::{
+    context::DatContext,
+    id_mapping::{DatDescriptor, DatLanguage},
+};
 use serde::{Deserialize, Serialize};
 use threadpool::ThreadPool;
+
+use crate::dat_yaml_util::DatYamlUtil;
 
 #[derive(Debug)]
 pub struct DatProcessor {
@@ -51,6 +55,7 @@ impl DatProcessor {
     pub fn dat_to_yaml(
         &self,
         dat_descriptor: DatDescriptor,
+        lang: DatLanguage,
         dat_context: Arc<DatContext>,
         raw_data_root_path: PathBuf,
     ) {
@@ -65,18 +70,18 @@ impl DatProcessor {
         }
 
         self.pool.lock().unwrap().execute(move || {
-            let res = dat_descriptor
-                .dat_to_yaml(dat_context, raw_data_root_path)
-                .map(|path| DatProcessorMessage {
-                    dat_descriptor,
-                    output_kind: DatProcessorOutputKind::Yaml,
-                    state: DatProcessingState::Finished(path),
-                })
-                .unwrap_or_else(|err| DatProcessorMessage {
-                    dat_descriptor,
-                    output_kind: DatProcessorOutputKind::Yaml,
-                    state: DatProcessingState::Error(err.to_string()),
-                });
+            let res =
+                DatYamlUtil::dat_to_yaml(&dat_descriptor, lang, dat_context, raw_data_root_path)
+                    .map(|path| DatProcessorMessage {
+                        dat_descriptor,
+                        output_kind: DatProcessorOutputKind::Yaml,
+                        state: DatProcessingState::Finished(path),
+                    })
+                    .unwrap_or_else(|err| DatProcessorMessage {
+                        dat_descriptor,
+                        output_kind: DatProcessorOutputKind::Yaml,
+                        state: DatProcessingState::Error(err.to_string()),
+                    });
 
             if let Err(err) = tx.send(res) {
                 eprintln!("Failed to notify about DAT to YAML result: {err}");
@@ -87,6 +92,7 @@ impl DatProcessor {
     pub fn yaml_to_dat(
         &self,
         dat_descriptor: DatDescriptor,
+        lang: DatLanguage,
         dat_context: Arc<DatContext>,
         raw_data_root_path: PathBuf,
         dat_root_path: PathBuf,
@@ -102,18 +108,23 @@ impl DatProcessor {
         }
 
         self.pool.lock().unwrap().execute(move || {
-            let res: DatProcessorMessage = dat_descriptor
-                .yaml_to_dat(dat_context, raw_data_root_path, dat_root_path)
-                .map(|path| DatProcessorMessage {
-                    dat_descriptor,
-                    output_kind: DatProcessorOutputKind::Dat,
-                    state: DatProcessingState::Finished(path),
-                })
-                .unwrap_or_else(|err| DatProcessorMessage {
-                    dat_descriptor,
-                    output_kind: DatProcessorOutputKind::Dat,
-                    state: DatProcessingState::Error(err.to_string()),
-                });
+            let res: DatProcessorMessage = DatYamlUtil::yaml_to_dat(
+                &dat_descriptor,
+                lang,
+                dat_context,
+                raw_data_root_path,
+                dat_root_path,
+            )
+            .map(|path| DatProcessorMessage {
+                dat_descriptor,
+                output_kind: DatProcessorOutputKind::Dat,
+                state: DatProcessingState::Finished(path),
+            })
+            .unwrap_or_else(|err| DatProcessorMessage {
+                dat_descriptor,
+                output_kind: DatProcessorOutputKind::Dat,
+                state: DatProcessingState::Error(err.to_string()),
+            });
 
             if let Err(err) = tx.send(res) {
                 eprintln!("Failed to notify about YAML to DAT result: {err}");
@@ -140,24 +151,25 @@ impl DatProcessor {
                 }
 
                 let path = entry.into_path();
-                let dat_descriptor = DatDescriptor::from_path(&path, &in_dir, &dat_context);
+                let dat = DatYamlUtil::dat_from_path(&path, &in_dir, &dat_context);
 
-                if dat_descriptor.is_none() {
+                if dat.is_none() {
                     eprintln!(
                         "Could not map the following file to a DAT: {}",
                         path.to_string_lossy()
                     );
                 }
-                dat_descriptor
+                dat
             })
-            .for_each(|dat_descriptor| {
-                let dat_context = dat_context.clone();
+            .for_each(|dat| {
+                let dat_context: Arc<DatContext> = dat_context.clone();
                 let raw_data_root_path = in_dir.clone();
                 let dat_root_path = out_dir.clone();
-                count += 1;
 
+                count += 1;
                 self.yaml_to_dat(
-                    dat_descriptor,
+                    dat.descriptor,
+                    dat.lang,
                     dat_context,
                     raw_data_root_path,
                     dat_root_path,

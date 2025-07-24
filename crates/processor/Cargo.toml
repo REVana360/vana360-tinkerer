@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.96"
-dats = { path = "../dats" }
+dats = { path = "../dats", features = ["specta"] }
 threadpool = "1.8.1"
 serde = "1.0.180"
 serde_yaml = "0.9.25"
