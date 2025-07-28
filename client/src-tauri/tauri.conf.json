@@ -17,7 +17,7 @@
     ]
   },
   "productName": "XI Tinkerer",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "identifier": "inouno.xi-tinkerer",
   "plugins": {
     "updater": {
