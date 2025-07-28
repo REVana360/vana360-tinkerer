@@ -10,6 +10,7 @@ use tokio::task::JoinSet;
 pub struct ZoneInfo {
     pub id: ZoneId,
     pub name: String,
+    pub filename: String,
 }
 
 pub async fn get_zone_ids_from_dats<T>(
@@ -36,6 +37,7 @@ where
                 Ok(_) => Ok::<ZoneInfo, anyhow::Error>(ZoneInfo {
                     id: zone_id.clone(),
                     name: zone_name.display_name.clone(),
+                    filename: zone_name.file_name.clone(),
                 }),
                 Err(err) => Err(err.into()),
             }

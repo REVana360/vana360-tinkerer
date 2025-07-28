@@ -11,17 +11,7 @@ use tokio::{fs, task::JoinSet};
 use crate::util::{ZoneInfo, get_zone_ids_from_dats};
 
 pub fn get_ximesh_filename(zone_info: &ZoneInfo) -> String {
-    println!("{}", zone_info.name);
-    format!(
-        "{}.ximesh",
-        zone_info
-            .name
-            .replace(" - ", "-")
-            .replace(" ", "_")
-            .replace("'", "")
-            .replace("(", "")
-            .replace(")", "")
-    )
+    format!("{}.ximesh", zone_info.filename)
 }
 
 pub async fn export_zone_meshes(ffxi_path: PathBuf, mut out_dir: PathBuf) -> Result<()> {
