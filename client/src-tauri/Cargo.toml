@@ -1,6 +1,6 @@
 [package]
 name = "xi_tinkerer"
-version = "0.8.0"
+version = "0.9.0"
 description = "XI Tinkerer"
 authors = ["InoUno"]
 license = "AGPL-3.0"
