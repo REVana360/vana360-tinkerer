@@ -44,6 +44,8 @@ pub static MISC_DATS: &'static [DatDescriptorInfo] = {
     &to_infos([
         DatDescriptor::DataMenu,
         DatDescriptor::QuestsMissionsKeyItems,
+        DatDescriptor::MeritTable,
+        DatDescriptor::MeritCategoryTable,
     ])
 };
 

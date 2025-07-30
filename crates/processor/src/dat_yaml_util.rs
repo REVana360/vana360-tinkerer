@@ -100,6 +100,8 @@ define_dat_files! {
     simple: {
         DataMenu => "data_menu",
         QuestsMissionsKeyItems => "quests_missions_keyitems",
+        MeritTable => "merit_table",
+        MeritCategoryTable => "merit_category_table",
 
         // String tables
         AbilityNames => "ability_names",

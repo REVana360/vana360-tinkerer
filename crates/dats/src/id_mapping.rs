@@ -5,8 +5,9 @@ use crate::{
     dat_format::DatFormat,
     formats::{
         dialog::Dialog, dmsg_table::DmsgTable, entity_names::EntityNames, events::Events,
-        item_info::ItemInfoTable, menu_table::MenuTable, status_info::StatusInfoTable,
-        xistring_table::XiStringTable, zone_data::ZoneData,
+        item_info::ItemInfoTable, menu_table::MenuTable, merit_category_table::MeritCategoryTable,
+        merit_table::MeritTable, status_info::StatusInfoTable, xistring_table::XiStringTable,
+        zone_data::ZoneData,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -185,6 +186,8 @@ define_dat_mappings! {
     simple: {
         DataMenu => MenuTable(81),
         QuestsMissionsKeyItems => MenuTable(82),
+        MeritTable => MeritTable(88),
+        MeritCategoryTable => MeritCategoryTable(89),
 
         // String tables
         AbilityNames => DmsgTable(55701, 55581),
