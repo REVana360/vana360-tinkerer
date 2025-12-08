@@ -109,6 +109,22 @@ async getZonesForType(datDescriptor: DatDescriptor) : Promise<Result<ZoneInfo[],
     else return { status: "error", error: e  as any };
 }
 },
+async zoneToWavefront(zoneId: number) : Promise<Result<null, any>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("zone_to_wavefront", { zoneId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async allZonesToWavefront() : Promise<Result<null, any>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("all_zones_to_wavefront") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getWorkingFiles() : Promise<Result<DatWithLang[], any>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_working_files") };
@@ -167,7 +183,7 @@ export type DatDescriptorInfo = { descriptor: DatDescriptor; has_jp: boolean }
 export type DatLanguage = "English" | "Japanese"
 export type DatProcessingState = "Working" | { Finished: string } | { Error: string }
 export type DatProcessorMessage = { dat_descriptor: DatDescriptor; output_kind: DatProcessorOutputKind; state: DatProcessingState }
-export type DatProcessorOutputKind = "Dat" | "Yaml"
+export type DatProcessorOutputKind = "Dat" | "Yaml" | "Wavefront"
 export type DatWithLang = { descriptor: DatDescriptor; lang: DatLanguage }
 export type FileNotification = { dat: DatWithLang; is_delete: boolean }
 export type PersistenceData = { ffxi_path: string | null; recent_projects: string[] }

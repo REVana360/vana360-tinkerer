@@ -5,12 +5,13 @@ use std::{
 
 use dats::{
     context::DatContext,
-    id_mapping::{DatDescriptor, DatLanguage},
+    formats::zone_data::zone_model::ZoneMesh,
+    id_mapping::{DatDescriptor, DatIdMapping, DatLanguage},
 };
 use serde::{Deserialize, Serialize};
 use threadpool::ThreadPool;
 
-use crate::dat_yaml_util::DatYamlUtil;
+use crate::{dat_yaml_util::DatYamlUtil, wavefront_obj::make_wavefront_file};
 
 #[derive(Debug)]
 pub struct DatProcessor {
@@ -30,6 +31,7 @@ pub struct DatProcessorMessage {
 pub enum DatProcessorOutputKind {
     Dat,
     Yaml,
+    Wavefront,
 }
 
 #[derive(Debug, Clone, specta::Type, Serialize, Deserialize)]
@@ -178,5 +180,63 @@ impl DatProcessor {
 
         self.is_preprocessing = false;
         count
+    }
+
+    pub fn zone_dat_to_wavefront(
+        &self,
+        zone_id: u16,
+        dat_context: Arc<DatContext>,
+        project_path: PathBuf,
+    ) {
+        let tx = self.tx.clone();
+        let dat_descriptor = DatDescriptor::ZoneData(zone_id);
+        let start_message = DatProcessorMessage {
+            dat_descriptor,
+            output_kind: DatProcessorOutputKind::Wavefront,
+            state: DatProcessingState::Working,
+        };
+
+        if let Err(err) = tx.send(start_message) {
+            eprintln!("Failed to notify about DAT to Wavefront start: {err}");
+        }
+
+        self.pool.lock().unwrap().execute(move || {
+            let res_fn = || {
+                let zone_data_dat = DatIdMapping::get()
+                    .zone_data
+                    .get(&zone_id)
+                    .ok_or_else(|| anyhow::anyhow!("Could not find zone DAT."))?;
+
+                let zone_data = dat_context.get_data_from_dat(zone_data_dat)?;
+
+                let zone_model = ZoneMesh::parse_from_zone_data(&zone_data.dat)?;
+
+                let zone_name = dat_context
+                    .zone_id_to_name
+                    .get(&zone_id)
+                    .map(|name| name.file_name.clone())
+                    .unwrap_or_else(|| format!("ID_{zone_id}"));
+
+                let out_path = project_path
+                    .join("zone_obj")
+                    .join(format!("{zone_name}.obj"));
+
+                make_wavefront_file(zone_model, out_path.clone()).map(|_| DatProcessorMessage {
+                    dat_descriptor,
+                    output_kind: DatProcessorOutputKind::Wavefront,
+                    state: DatProcessingState::Finished(out_path),
+                })
+            };
+
+            let res = res_fn().unwrap_or_else(|err| DatProcessorMessage {
+                dat_descriptor,
+                output_kind: DatProcessorOutputKind::Wavefront,
+                state: DatProcessingState::Error(err.to_string()),
+            });
+
+            if let Err(err) = tx.send(res) {
+                eprintln!("Failed to notify about DAT to Wavefront result: {err}");
+            }
+        });
     }
 }

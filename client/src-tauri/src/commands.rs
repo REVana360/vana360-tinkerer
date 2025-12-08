@@ -100,6 +100,60 @@ pub async fn get_zone_model(zone_id: ZoneId, state: AppState<'_>) -> Result<Resp
 
 #[tauri::command]
 #[specta::specta]
+pub async fn zone_to_wavefront(zone_id: u16, state: AppState<'_>) -> Result<(), AppError> {
+    let dat_context = state
+        .read()
+        .dat_context
+        .clone()
+        .ok_or(anyhow!("No DAT context."))?;
+
+    let project_path = state
+        .read()
+        .project_path
+        .as_ref()
+        .ok_or(anyhow!("No project path specified."))?
+        .clone();
+
+    let processor = state.read().processor.clone();
+
+    processor.zone_dat_to_wavefront(zone_id, dat_context, project_path);
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn all_zones_to_wavefront(state: AppState<'_>) -> Result<(), AppError> {
+    let dat_context = state
+        .read()
+        .dat_context
+        .clone()
+        .ok_or(anyhow!("No DAT context."))?;
+
+    let project_path = state
+        .read()
+        .project_path
+        .as_ref()
+        .ok_or(anyhow!("No project path specified."))?
+        .clone();
+
+    let processor = state.read().processor.clone();
+
+    let zone_ids = dat_context
+        .zone_id_to_name
+        .keys()
+        .cloned()
+        .collect::<Vec<_>>();
+
+    zone_ids.into_iter().for_each(|zone_id| {
+        processor.zone_dat_to_wavefront(zone_id, dat_context.clone(), project_path.clone());
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_misc_dats() -> Result<&'static [DatDescriptorInfo], AppError> {
     Ok(dat_query::MISC_DATS)
 }

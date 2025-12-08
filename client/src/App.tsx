@@ -4,6 +4,7 @@ import Home from "./components/Home";
 import { Routes, Route } from "@solidjs/router";
 import { HiSolidAdjustmentsHorizontal, HiSolidChatBubbleLeftRight, HiSolidCog8Tooth, HiSolidDocumentText, HiSolidMagnifyingGlass, HiSolidMap, HiSolidPencilSquare, HiSolidPlayCircle, HiSolidShoppingBag, HiSolidUser } from "solid-icons/hi";
 import DatTable from "./components/DatTable";
+import ZonesTable from "./components/ZonesTable";
 import Table from "./components/Table";
 import ZoneData from "./components/ZoneData";
 import { commands } from "./bindings";
@@ -188,22 +189,7 @@ function App() {
                 <Route
                   path="/"
                   component={() => (
-                    <Table
-                      title="Zones"
-                      rowsResourceFetcher={async () => unwrap(await commands.getZonesForType({ type: "ZoneData", index: 0 }))}
-                      columns={[{ name: "Name", key: "name" }, { name: "ID", key: "id" }]}
-                      defaultSortColumn="name"
-                      additionalColumns={[
-                        {
-                          name: "DAT path",
-                          content: (row) => (<span class="font-mono text-sm">{row.dat_path}</span>)
-                        },
-                        {
-                          name: "View",
-                          content: (row) => (<a href={"/zones/" + row.id} class="text-blue-400 font-semibold">View</a>)
-                        }
-                      ]}
-                    />
+                    <ZonesTable />
                   )}>
                 </Route>
 
