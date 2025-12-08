@@ -175,27 +175,6 @@ pub struct ZoneInfo {
 }
 
 #[derive(Serialize, specta::Type)]
-pub struct ZoneQueryData {
-    pub mesh_data: Vec<u8>,
-}
-
-#[derive(Serialize, specta::Type)]
-pub struct ZoneTriangleInfo {
-    pub o2w: [[f32; 3]; 4],
-    pub o2w_opts: [[u16; 2]; 4],
-    pub w2o: [[f32; 3]; 4],
-    pub w2o_opts: [[u16; 2]; 4],
-    pub unk_floats: [f32; 9],
-    pub data_field_1: u32,
-    pub data_field_2: u32,
-    pub unk_bytes: [u8; 4],
-    pub unk_1: u32,
-    pub min_y: f32,
-    pub max_y: f32,
-    pub unk_2: u32,
-}
-
-#[derive(Serialize, specta::Type)]
 pub struct TriangleMetadata {
     // Triangle-specific
     pub grid_entry_idx: u32,
