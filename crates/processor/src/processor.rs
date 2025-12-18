@@ -11,7 +11,10 @@ use dats::{
 use serde::{Deserialize, Serialize};
 use threadpool::ThreadPool;
 
-use crate::{dat_yaml_util::DatYamlUtil, wavefront_obj::make_wavefront_file};
+use crate::{
+    dat_yaml_util::DatYamlUtil,
+    wavefront_obj::{make_collision_wavefront_file, make_model_wavefront_file},
+};
 
 #[derive(Debug)]
 pub struct DatProcessor {
@@ -32,6 +35,12 @@ pub enum DatProcessorOutputKind {
     Dat,
     Yaml,
     Wavefront,
+}
+
+#[derive(Debug, Clone, Copy, specta::Type, Serialize, Deserialize)]
+pub enum ZoneWavefrontKind {
+    Collision,
+    Model,
 }
 
 #[derive(Debug, Clone, specta::Type, Serialize, Deserialize)]
@@ -185,6 +194,7 @@ impl DatProcessor {
     pub fn zone_dat_to_wavefront(
         &self,
         zone_id: u16,
+        kind: ZoneWavefrontKind,
         dat_context: Arc<DatContext>,
         project_path: PathBuf,
     ) {
@@ -219,9 +229,21 @@ impl DatProcessor {
 
                 let out_path = project_path
                     .join("zone_obj")
+                    .join(match kind {
+                        ZoneWavefrontKind::Collision => "collision",
+                        ZoneWavefrontKind::Model => "model",
+                    })
                     .join(format!("{zone_name}.obj"));
 
-                make_wavefront_file(zone_model, out_path.clone()).map(|_| DatProcessorMessage {
+                match kind {
+                    ZoneWavefrontKind::Collision => {
+                        make_collision_wavefront_file(zone_model, out_path.clone())
+                    }
+                    ZoneWavefrontKind::Model => {
+                        make_model_wavefront_file(&zone_data.dat, out_path.clone())
+                    }
+                }
+                .map(|_| DatProcessorMessage {
                     dat_descriptor,
                     output_kind: DatProcessorOutputKind::Wavefront,
                     state: DatProcessingState::Finished(out_path),

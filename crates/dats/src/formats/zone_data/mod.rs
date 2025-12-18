@@ -1,6 +1,8 @@
 pub mod grid_mesh;
+pub mod math;
 pub mod mesh_block;
 pub mod mesh_placement;
+pub mod model_blocks;
 pub mod zone_mmb;
 pub mod zone_model;
 
@@ -8,7 +10,7 @@ use anyhow::{Result, anyhow};
 use common::{
     byte_walker::ByteWalker, vec_byte_walker::VecByteWalker, writing_byte_walker::WritingByteWalker,
 };
-use encoding::chunk_key_tables::KEY_TABLE_1;
+use encoding::chunk_key_tables::{KEY_TABLE_1, KEY_TABLE_2};
 use serde_derive::{Deserialize, Serialize};
 use zone_mmb::ZoneMmb;
 use zone_model::ZoneMesh;
@@ -125,16 +127,16 @@ impl ChunkData {
             }
 
             // MMB
-            // 0x2E => {
-            //     Self::decode_05(data.to_vec())
-            //         .and_then(|decoded| Self::decode_ffff(decoded))
-            //         .and_then(|decoded| ZoneMmb::parse(&mut VecByteWalker::on(decoded)))
-            //         .map(|zone_mmb| ChunkData::ZoneMmb { zone_mmb })
-            //         .or_else(|err| {
-            //             eprintln!("Failed to parse MMB: {err:?}");
-            //             Ok(ChunkData::Unknown { data: data.into() })
-            //         })
-            // }
+            0x2E => {
+                Self::decode_05(data.to_vec())
+                    .and_then(|decoded| Self::decode_ffff(decoded))
+                    .and_then(|decoded| ZoneMmb::parse(&mut VecByteWalker::on(decoded)))
+                    .map(|zone_mmb| ChunkData::ZoneMmb { zone_mmb })
+                    .or_else(|err| {
+                        eprintln!("Failed to parse MMB: {err}");
+                        Ok(ChunkData::Unknown { data: data.into() })
+                    })
+            }
 
             // Notes from other projects:
             0x20 | // IMG
@@ -189,7 +191,7 @@ impl ChunkData {
     }
 
     fn decode_05(data: Vec<u8>) -> Result<Vec<u8>> {
-        if data[3] < 0x05 {
+        if data[3] <= 0x04 {
             return Ok(data);
         }
 
@@ -197,20 +199,19 @@ impl ChunkData {
         let len = walker.read_at::<u32>(0)? & 0xFFFFFF;
 
         let index = walker.read_at::<u8>(5)? ^ 0xF0;
-        let mut key = KEY_TABLE_1[index as usize] as usize;
+        let mut key = KEY_TABLE_1[index as usize];
 
-        let mut key_counter = 0;
+        let mut key_counter: u8 = 0;
         for pos in 8..len {
-            let x = (key << 8) | key;
-            key_counter += 1;
-            key += key_counter;
+            let x: u16 = ((key as u16) << 8) | key as u16;
+            key_counter = key_counter.wrapping_add(1);
+            key = key.wrapping_add(key_counter);
 
             let new_value = walker.read_at::<u8>(pos as usize)? ^ ((x >> (key & 0x7)) as u8);
             walker.write_at::<u8>(pos as usize, new_value);
 
-            key_counter += 1;
-            key += key_counter;
-            key &= 0xFF;
+            key_counter = key_counter.wrapping_add(1);
+            key = key.wrapping_add(key_counter);
         }
 
         Ok(walker.into_vec())
@@ -224,14 +225,12 @@ impl ChunkData {
         let mut walker = VecByteWalker::on(data);
         let len = walker.read_at::<u32>(0)? & 0xFFFFFF;
 
-        let mut key1 = (walker.read_at::<u8>(5)? ^ 0xF0) as usize;
-        let mut key2 = KEY_TABLE_1[key1 as usize] as usize;
+        let mut key1 = walker.read_at::<u8>(5)? ^ 0xF0;
+        let mut key2 = KEY_TABLE_2[key1 as usize];
 
-        let decode_count = ((len - 8) & (!0xFu32)) / 2;
+        let decode_count = (((len - 8) & 0xFFFFFFF0) - ((len - 8) >> 0x1F)) >> 1;
 
-        let mut offset1: usize = 8;
-        let mut offset2: usize = offset1 + decode_count as usize;
-        if offset2 >= walker.len() {
+        if 8 + decode_count as usize >= walker.len() {
             return Err(anyhow!(
                 "Invalid decode_count of {} when length is {}",
                 decode_count,
@@ -239,15 +238,13 @@ impl ChunkData {
             ));
         }
 
-        for _ in (0..decode_count).step_by(8) {
-            if (key2 & 1) == 1 {
-                walker.swap_8_bytes(offset1, offset2);
+        for offset in (0..decode_count).step_by(8) {
+            if (key2 & 1) != 0 {
+                walker.swap_8_bytes((8 + offset) as usize, (8 + offset + decode_count) as usize);
             }
 
-            key1 += 9;
-            key2 += key1;
-            offset1 += 8;
-            offset2 += 8;
+            key1 = key1.wrapping_add(9);
+            key2 = key2.wrapping_add(key1);
         }
 
         Ok(walker.into_vec())

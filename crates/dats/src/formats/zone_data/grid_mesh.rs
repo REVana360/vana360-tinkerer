@@ -8,14 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
-use super::{mesh_block::MeshBlock, mesh_placement::MeshPlacement};
+use crate::formats::zone_data::math::Vertex;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub struct Point3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
+use super::{mesh_block::MeshBlock, mesh_placement::MeshPlacement};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct TriangleInfo {
@@ -44,8 +39,8 @@ pub struct GridCell {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NormalizedMeshEntry {
     pub flags: u16,
-    pub vertices: Vec<Point3D>,
-    pub normals: Vec<Point3D>,
+    pub vertices: Vec<Vertex>,
+    pub normals: Vec<Vertex>,
     pub triangles: Vec<TriangleInfo>,
 
     pub o2w: [[f32; 3]; 4],

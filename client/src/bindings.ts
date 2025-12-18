@@ -109,17 +109,17 @@ async getZonesForType(datDescriptor: DatDescriptor) : Promise<Result<ZoneInfo[],
     else return { status: "error", error: e  as any };
 }
 },
-async zoneToWavefront(zoneId: number) : Promise<Result<null, any>> {
+async zoneToWavefront(zoneId: number, kind: ZoneWavefrontKind) : Promise<Result<null, any>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("zone_to_wavefront", { zoneId }) };
+    return { status: "ok", data: await TAURI_INVOKE("zone_to_wavefront", { zoneId, kind }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async allZonesToWavefront() : Promise<Result<null, any>> {
+async allZonesToWavefront(kind: ZoneWavefrontKind) : Promise<Result<null, any>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("all_zones_to_wavefront") };
+    return { status: "ok", data: await TAURI_INVOKE("all_zones_to_wavefront", { kind }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -189,6 +189,7 @@ export type FileNotification = { dat: DatWithLang; is_delete: boolean }
 export type PersistenceData = { ffxi_path: string | null; recent_projects: string[] }
 export type TriangleMetadata = { grid_entry_idx: number; mesh_entry_idx: number; material: number; is_invalid_triangle: boolean; is_barrier: boolean; o2w: [([number, number, number]), ([number, number, number]), ([number, number, number]), ([number, number, number])]; o2w_opts: [([number, number]), ([number, number]), ([number, number]), ([number, number])]; w2o: [([number, number, number]), ([number, number, number]), ([number, number, number]), ([number, number, number])]; w2o_opts: [([number, number]), ([number, number]), ([number, number]), ([number, number])]; unk_floats: [number, number, number, number, number, number, number, number, number]; data_field_1: number; data_field_2: number; unk_bytes: [number, number, number, number]; unk_1: number; min_y: number; max_y: number; unk_2: number; map_id: number; block_flags: number }
 export type ZoneInfo = { id: number; name: string; dat_path: string }
+export type ZoneWavefrontKind = "Collision" | "Model"
 
 /** tauri-specta globals **/
 

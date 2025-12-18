@@ -16,11 +16,21 @@ function ZonesTable() {
           content: (row) => (<span class="font-mono text-sm">{row.dat_path}</span>)
         },
         {
-          name: "Wavefront (.obj)",
+          name: "Collision .obj",
           content: (row) => (
             <span
               class="clickable pl-2 font-mono"
-              onclick={async () => unwrap(await commands.zoneToWavefront(row.id))}
+              onclick={async () => unwrap(await commands.zoneToWavefront(row.id, "Collision"))}
+            >
+              Export
+            </span>)
+        },
+        {
+          name: "Model .obj",
+          content: (row) => (
+            <span
+              class="clickable pl-2 font-mono"
+              onclick={async () => unwrap(await commands.zoneToWavefront(row.id, "Model"))}
             >
               Export
             </span>)
@@ -31,7 +41,11 @@ function ZonesTable() {
         },
       ]}
       headerActions={
-        [<button onClick={async () => unwrap(await commands.allZonesToWavefront())}>Export all wavefront (.obj)</button>]
+        [<div class="flex gap-3 items-baseline">
+          <span>Export all wavefront (.obj):</span>
+          <button onClick={async () => unwrap(await commands.allZonesToWavefront("Collision"))}>Collision</button>
+          <button onClick={async () => unwrap(await commands.allZonesToWavefront("Model"))}>Model</button>
+        </div>]
       }
     />
   );

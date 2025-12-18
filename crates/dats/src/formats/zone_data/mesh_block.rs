@@ -2,14 +2,14 @@ use anyhow::Result;
 use common::byte_walker::ByteWalker;
 use serde::{Deserialize, Serialize};
 
-use crate::formats::zone_data::grid_mesh::{Point3D, TriangleInfo};
+use crate::formats::zone_data::{grid_mesh::TriangleInfo, math::Vertex};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MeshBlock {
     pub flags: u16,
-    pub vertices: Vec<Point3D>,
+    pub vertices: Vec<Vertex>,
     pub triangles: Vec<TriangleInfo>,
-    pub normals: Vec<Point3D>,
+    pub normals: Vec<Vertex>,
 }
 
 impl MeshBlock {
@@ -33,7 +33,7 @@ impl MeshBlock {
             let y = walker.step::<f32>()?;
             let z = walker.step::<f32>()?;
 
-            let vertex = Point3D { x, y, z };
+            let vertex = Vertex { x, y, z };
             vertices.push(vertex);
         }
 
@@ -43,7 +43,7 @@ impl MeshBlock {
             let y = -walker.step::<f32>()?;
             let z = -walker.step::<f32>()?;
 
-            let normal = Point3D { x, y, z };
+            let normal = Vertex { x, y, z };
             normals.push(normal);
         }
 

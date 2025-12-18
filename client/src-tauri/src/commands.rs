@@ -8,7 +8,9 @@ use anyhow::{Result, anyhow};
 use dats::base::ZoneId;
 use dats::id_mapping::{DatDescriptor, DatLanguage, DatWithLang};
 use processor::{
-    dat_yaml_util::DatYamlUtil, processor::DatProcessorMessage, ximesh::get_ximesh_bytes,
+    dat_yaml_util::DatYamlUtil,
+    processor::{DatProcessorMessage, ZoneWavefrontKind},
+    ximesh::get_ximesh_bytes,
 };
 use tracing_subscriber::fmt::MakeWriter;
 
@@ -100,7 +102,11 @@ pub async fn get_zone_model(zone_id: ZoneId, state: AppState<'_>) -> Result<Resp
 
 #[tauri::command]
 #[specta::specta]
-pub async fn zone_to_wavefront(zone_id: u16, state: AppState<'_>) -> Result<(), AppError> {
+pub async fn zone_to_wavefront(
+    zone_id: u16,
+    kind: ZoneWavefrontKind,
+    state: AppState<'_>,
+) -> Result<(), AppError> {
     let dat_context = state
         .read()
         .dat_context
@@ -116,14 +122,17 @@ pub async fn zone_to_wavefront(zone_id: u16, state: AppState<'_>) -> Result<(), 
 
     let processor = state.read().processor.clone();
 
-    processor.zone_dat_to_wavefront(zone_id, dat_context, project_path);
+    processor.zone_dat_to_wavefront(zone_id, kind, dat_context, project_path);
 
     Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn all_zones_to_wavefront(state: AppState<'_>) -> Result<(), AppError> {
+pub async fn all_zones_to_wavefront(
+    kind: ZoneWavefrontKind,
+    state: AppState<'_>,
+) -> Result<(), AppError> {
     let dat_context = state
         .read()
         .dat_context
@@ -146,7 +155,7 @@ pub async fn all_zones_to_wavefront(state: AppState<'_>) -> Result<(), AppError>
         .collect::<Vec<_>>();
 
     zone_ids.into_iter().for_each(|zone_id| {
-        processor.zone_dat_to_wavefront(zone_id, dat_context.clone(), project_path.clone());
+        processor.zone_dat_to_wavefront(zone_id, kind, dat_context.clone(), project_path.clone());
     });
 
     Ok(())
@@ -193,9 +202,9 @@ pub async fn get_triangle_metadata(
                 is_barrier: tri.is_barrier,
 
                 map_id: placement.get_map_id(),
-                o2w: placement.o2w,
+                o2w: placement.o2w.into_raw(),
                 o2w_opts: placement.o2w_opts,
-                w2o: placement.w2o,
+                w2o: placement.w2o.into_raw(),
                 w2o_opts: placement.w2o_opts,
                 unk_floats: placement.unk_floats,
                 data_field_1: placement.data_field,

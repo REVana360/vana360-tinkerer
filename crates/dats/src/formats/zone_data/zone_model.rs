@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use common::byte_walker::ByteWalker;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::serde_hex;
+use crate::{formats::zone_data::model_blocks::ModelBlockInstance, serde_hex};
 
 use super::{ChunkData, ZoneData, grid_mesh::GridMesh};
 
@@ -11,7 +11,9 @@ pub struct ZoneMesh {
     pub data_len: u32,
 
     pub len_and_type: u32,
-    pub node_count_and_unk: u32,
+    pub model_block_instance_count: u32,
+    pub model_block_unk: u8,
+    pub model_block_instances: Vec<ModelBlockInstance>,
     pub mesh_header_offset: u32,
 
     pub grid_width: u16,
@@ -23,8 +25,7 @@ pub struct ZoneMesh {
     pub unk_coll2_end_offset: u32,
     pub unk_coll3_offset: u32,
 
-    pub flags1: u32,
-    pub flags: [u32; 4],
+    pub flags: u32,
 
     #[serde(with = "serde_hex")]
     pub misc_data: Vec<u8>,
@@ -57,6 +58,8 @@ impl ZoneMesh {
 
         let len_and_type = walker.step::<u32>()?; // 0x00
         let node_count_and_unk = walker.step::<u32>()?; // 0x04
+        let model_block_instance_count = node_count_and_unk & 0xFFFFFF;
+        let model_block_unk = (node_count_and_unk >> 24) as u8;
         let mesh_header_offset = walker.step::<u32>()?; // 0x08
 
         if data_len <= mesh_header_offset {
@@ -85,13 +88,9 @@ impl ZoneMesh {
         let unk_coll3_offset = walker.step::<u32>()?; // 0x18
         let _unk_coll3_count = (mesh_header_offset.saturating_sub(unk_coll3_offset)) / 0x4C;
 
-        let flags1 = walker.step::<u32>()?; // 0x1C
+        let flags = walker.step::<u32>()?; // 0x1C
 
-        let mut flags = [0u32; 4];
-        flags[0] = walker.step::<u32>()?;
-        flags[1] = walker.step::<u32>()?;
-        flags[2] = walker.step::<u32>()?;
-        flags[3] = walker.step::<u32>()?;
+        let model_block_instances = ModelBlockInstance::parse(walker, model_block_instance_count)?;
 
         if (mesh_header_offset as usize) < walker.offset() {
             return Err(anyhow!(
@@ -121,15 +120,16 @@ impl ZoneMesh {
             0xC0
         };
 
-        // Likely skipping some stuff here
-
         let mesh = GridMesh::parse(walker, grid_offset, grid_height, grid_width)?;
 
         Ok(ZoneMesh {
             data_len,
 
             len_and_type,
-            node_count_and_unk,
+            model_block_instance_count,
+            model_block_unk,
+            model_block_instances,
+
             mesh_header_offset,
 
             grid_width,
@@ -141,7 +141,6 @@ impl ZoneMesh {
             unk_coll2_end_offset,
             unk_coll3_offset,
 
-            flags1,
             flags,
 
             misc_data,
@@ -159,7 +158,7 @@ impl ZoneMesh {
     }
 
     pub fn wide_grid_search(&self) -> bool {
-        (self.flags1.to_le_bytes()[1] >> 3 & 1) > 0
+        (self.flags.to_le_bytes()[1] >> 3 & 1) > 0
     }
 }
 

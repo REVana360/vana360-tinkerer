@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use common::byte_walker::ByteWalker;
 use serde_derive::{Deserialize, Serialize};
 
@@ -30,8 +30,7 @@ pub enum ZoneMmbModels {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ZoneMmbHeader {
     pub len: u32,
-    #[serde(with = "serde_hex_num")]
-    pub byte_0x3: u8,
+    pub if_lte_1_has_9_pieces: u8,
 
     pub kind: u8,
     #[serde(with = "serde_hex_num")]
@@ -41,10 +40,9 @@ pub struct ZoneMmbHeader {
     #[serde(with = "serde_hex_num")]
     pub byte_0x7: u8,
 
-    pub moniker1: String,
-    pub moniker2: String,
+    pub moniker: String,
 
-    pub img_id: String,
+    pub mmb_id: String,
     pub pieces: u32,
     pub x1: f32,
     pub x2: f32,
@@ -52,6 +50,16 @@ pub struct ZoneMmbHeader {
     pub y2: f32,
     pub z1: f32,
     pub z2: f32,
+}
+
+impl ZoneMmbHeader {
+    pub fn get_piece_count(&self) -> u32 {
+        if self.if_lte_1_has_9_pieces > 1 {
+            self.pieces
+        } else {
+            9
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -163,16 +171,16 @@ pub struct ZoneMmbModel<VertexKind> {
     pub indices: Vec<u16>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct ZoneMmbEntry {
-    pub draw_type: GlDrawType,
-    pub texture_name: String,
-    pub vertex_count: u16,
-    pub blending: u16,
-    pub vertices: Vec<ZoneMmbBlockVertex>,
-    pub index_count: u32,
-    pub indices: Vec<u16>,
-}
+// #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+// pub struct ZoneMmbEntry {
+//     pub draw_type: GlDrawType,
+//     pub texture_name: String,
+//     pub vertex_offset: u16,
+//     pub blending: u16,
+//     pub vertices: Vec<ZoneMmbBlockVertex>,
+//     pub index_count: u32,
+//     pub indices: Vec<u16>,
+// }
 
 impl ZoneMmb {
     pub fn parse<T: ByteWalker>(walker: &mut T) -> Result<ZoneMmb> {
@@ -189,12 +197,6 @@ impl ZoneMmb {
                 .with_context(|| "At next block offset")?;
 
             let block_header = Self::parse_block_header(walker)?;
-            // if block_header.model_count > 50 {
-            //     return Err(anyhow!(
-            //         "Corrupt MMB model counts: {}",
-            //         block_header.model_count
-            //     ));
-            // }
 
             let models =
                 Self::parse_models(walker, header.kind, block_header.model_count as usize)?;
@@ -211,18 +213,17 @@ impl ZoneMmb {
     fn parse_header<T: ByteWalker>(walker: &mut T) -> Result<ZoneMmbHeader> {
         let first_u32 = walker.step::<u32>()?;
         let len = first_u32 & 0xFFFFFF;
-        let byte_0x3 = (first_u32 >> 24 & 0xFF) as u8;
+        let if_lte_1_has_9_pieces = (first_u32 >> 24 & 0xFF) as u8;
 
         Ok(ZoneMmbHeader {
             len,
-            byte_0x3,
+            if_lte_1_has_9_pieces,
             kind: walker.step::<u8>()?,
             byte_0x5: walker.step::<u8>()?,
             byte_0x6: walker.step::<u8>()?,
             byte_0x7: walker.step::<u8>()?,
-            moniker1: walker.take_str_utf8_nul_end(4)?,
-            moniker2: walker.take_str_utf8_nul_end(4)?,
-            img_id: walker.take_str_utf8_space_end(16)?,
+            moniker: walker.take_str_utf8_nul_end(8).unwrap_or_default(),
+            mmb_id: walker.take_str_utf8_space_end(16).unwrap_or_default(),
             pieces: walker.step()?,
             x1: walker.step()?,
             x2: walker.step()?,
@@ -256,14 +257,14 @@ impl ZoneMmb {
     fn parse_model<VertexKind: VertexParse, T: ByteWalker>(
         walker: &mut T,
     ) -> Result<ZoneMmbModel<VertexKind>> {
-        let (vertex_count, header) = Self::parse_model_header(walker)?;
+        let (vertex_offset, header) = Self::parse_model_header(walker)?;
 
         let block_start_offset = walker.offset() as u32;
-        let vertex_block_size = vertex_count * size_of::<VertexKind>() as u32;
+        let vertex_block_size = vertex_offset * size_of::<VertexKind>() as u32;
 
         let idx_info_offset = block_start_offset + vertex_block_size;
 
-        let vertices = (0..vertex_count)
+        let vertices = (0..vertex_offset)
             .map(|_| VertexKind::parse_vertex(walker))
             .collect::<Result<Vec<_>>>()?;
 
@@ -317,9 +318,9 @@ impl ZoneMmb {
         let texture_kind = walker.take_str_utf8_space_end(8)?;
         let texture_id = walker.take_str_utf8_space_end(8)?;
         let count_and_flags = walker.step::<u32>()?;
-        let vertex_count = count_and_flags & 0xFFFFFFF;
+        let vertex_offset = count_and_flags & 0xFFFFFFF;
         Ok((
-            vertex_count,
+            vertex_offset,
             ZoneMmbModelHeader {
                 texture_kind,
                 texture_id,
@@ -352,11 +353,16 @@ impl ZoneMmb {
 
     fn parse_offsets<T: ByteWalker>(walker: &mut T, header: &ZoneMmbHeader) -> Result<Vec<u32>> {
         let mut offsets = vec![];
-        for _ in 0..header.pieces {
+        let pieces = header.get_piece_count();
+        for _ in 0..pieces {
             let offset = walker.step::<u32>()?;
-            if offset != 0 {
-                offsets.push(offset)
+            if offset == 0 {
+                break;
             }
+            if offset as usize > walker.len() {
+                return Err(anyhow!("Found too big offset for MMB block: {}", offset));
+            }
+            offsets.push(offset)
         }
         Ok(offsets)
     }

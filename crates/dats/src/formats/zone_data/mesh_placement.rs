@@ -3,11 +3,13 @@ use anyhow::Result;
 use common::byte_walker::ByteWalker;
 use serde::{Deserialize, Serialize};
 
+use crate::formats::zone_data::math::TransformationMatrix;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MeshPlacement {
-    pub o2w: [[f32; 3]; 4],
+    pub o2w: TransformationMatrix,
     pub o2w_opts: [[u16; 2]; 4],
-    pub w2o: [[f32; 3]; 4],
+    pub w2o: TransformationMatrix,
     pub w2o_opts: [[u16; 2]; 4],
     pub unk_floats: [f32; 9],
     pub data_field: u32,
@@ -65,9 +67,9 @@ impl MeshPlacement {
         let unk_2 = walker.step::<u32>()?;
 
         Ok(Self {
-            o2w,
+            o2w: o2w.into(),
             o2w_opts,
-            w2o,
+            w2o: w2o.into(),
             w2o_opts,
             unk_floats,
             data_field,
