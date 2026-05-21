@@ -4,10 +4,11 @@ use crate::{
     base::{Dat, DatByZone, ZoneId},
     dat_format::DatFormat,
     formats::{
-        dialog::Dialog, dmsg_table::DmsgTable, entity_names::EntityNames, events::Events,
-        item_info::ItemInfoTable, menu_table::MenuTable, merit_category_table::MeritCategoryTable,
-        merit_table::MeritTable, status_info::StatusInfoTable, xistring_table::XiStringTable,
-        zone_data::ZoneData,
+        auto_translate::AutoTranslate, dialog::Dialog, dmsg_table::DmsgTable,
+        entity_names::EntityNames, events::Events, furniture_data::FurnitureData,
+        item_info::ItemInfoTable, menu_table::MenuTable,
+        merit_category_table::MeritCategoryTable, merit_table::MeritTable,
+        status_info::StatusInfoTable, xistring_table::XiStringTable, zone_data::ZoneData,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -277,6 +278,8 @@ define_dat_mappings! {
         VouchersAndSlips => ItemInfoTable(55667),
         Monipulator => ItemInfoTable(55669),
         Instincts => ItemInfoTable(55670),
+        Furniture => FurnitureData(32922),
+        AutoTranslate => AutoTranslate(55665),
 
         // Global dialog
         MonsterSkillNames => Dialog(7035),
