@@ -813,19 +813,30 @@ fn select_xbox_candidate<'a>(
     dat_path: DatPath,
     candidates_by_path: &HashMap<String, &'a XboxPackageCandidate>,
 ) -> Option<&'a XboxPackageCandidate> {
-    let logical_path = stable_relative_path(&dat_path.to_path());
-    let package = xbox_package_name(xbox_package_index(dat_path));
-    let preferred_path = format!("{}/{}", package, logical_path).to_ascii_lowercase();
-    if let Some(candidate) = candidates_by_path.get(&preferred_path) {
-        return Some(*candidate);
-    }
-
-    if package == XBOX_PACKAGE_SLOT_NAMES[0] {
-        let fallback_path = format!("{}/{}", XBOX_BASE_PACKAGE, logical_path).to_ascii_lowercase();
-        return candidates_by_path.get(&fallback_path).copied();
+    for relative_path in xbox_relative_source_paths(dat_path) {
+        let candidate_path = stable_relative_path(&relative_path).to_ascii_lowercase();
+        if let Some(candidate) = candidates_by_path.get(&candidate_path) {
+            return Some(*candidate);
+        }
     }
 
     None
+}
+
+pub(crate) fn resolve_xbox_source(runtime_root: &Path, dat_path: DatPath) -> Option<PathBuf> {
+    xbox_relative_source_paths(dat_path)
+        .into_iter()
+        .find(|relative_path| runtime_root.join(relative_path).is_file())
+}
+
+fn xbox_relative_source_paths(dat_path: DatPath) -> Vec<PathBuf> {
+    let package = xbox_package_name(xbox_package_index(dat_path));
+    let logical_path = dat_path.to_path();
+    let mut candidates = vec![PathBuf::from(package).join(&logical_path)];
+    if package == XBOX_PACKAGE_SLOT_NAMES[0] {
+        candidates.push(PathBuf::from(XBOX_BASE_PACKAGE).join(logical_path));
+    }
+    candidates
 }
 
 fn package_file(candidate: &XboxPackageCandidate) -> XboxPackageFile {
@@ -1099,7 +1110,7 @@ fn summarize(files: &[DatAuditFile]) -> AuditSummary {
     summary
 }
 
-fn stable_relative_path(path: &Path) -> String {
+pub(crate) fn stable_relative_path(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
 }
 

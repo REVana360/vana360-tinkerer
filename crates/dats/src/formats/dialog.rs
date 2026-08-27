@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, mem::size_of};
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use common::{byte_walker::ByteWalker, get_padding, writing_byte_walker::WritingByteWalker};
 use encoding::{decoder::Decoder, encoder::Encoder};
 use serde_derive::{Deserialize, Serialize};
@@ -48,7 +48,7 @@ impl Dialog {
         let shifted_string_count = walker.step::<u32>()? ^ DIALOG_MASK;
         if shifted_string_count % 4 != 0
             || shifted_string_count > walker.len() as u32
-            || shifted_string_count < 8
+            || shifted_string_count < 4
         {
             return Err(anyhow!(
                 "Invalid shifted string count {} with byte count {}.",
@@ -61,6 +61,15 @@ impl Dialog {
     }
 
     fn parse<T: ByteWalker>(walker: &mut T) -> Result<Self> {
+        if walker.len() == size_of::<u32>() {
+            let marker = walker.step::<u32>()?;
+            if marker == 0 {
+                return Ok(Self::default());
+            }
+
+            return Err(anyhow!("Invalid empty dialog marker {marker:#010X}."));
+        }
+
         let (file_size, string_count) = Self::get_header_values(walker)?;
 
         let mut string_ends = (0..string_count - 1)
@@ -82,6 +91,12 @@ impl Dialog {
     }
 
     pub fn write<T: WritingByteWalker>(&self, walker: &mut T) -> Result<()> {
+        if self.entries.is_empty() {
+            walker.set_size(size_of::<u32>());
+            walker.write(0u32);
+            return Ok(());
+        }
+
         let encoded_strings = self
             .entries
             .iter()
@@ -148,6 +163,7 @@ impl DatFormat for Dialog {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     use common::byte_walker::BufferedByteWalker;
@@ -161,6 +177,40 @@ mod tests {
         header_only.extend_from_slice(&(8u32 ^ super::DIALOG_MASK).to_le_bytes());
 
         assert!(Dialog::check_type(&mut BufferedByteWalker::on(&header_only)).is_err());
+    }
+
+    #[test]
+    fn empty_sentinel_round_trips() {
+        let bytes = [0u8; 4];
+
+        let dialog = Dialog::from_bytes(&bytes).unwrap();
+
+        Dialog::check_type(&mut BufferedByteWalker::on(&bytes)).unwrap();
+        assert!(dialog.entries.is_empty());
+        assert_eq!(dialog.to_bytes().unwrap(), bytes);
+    }
+
+    #[test]
+    fn four_byte_nonzero_marker_is_rejected() {
+        assert!(Dialog::from_bytes(&1u32.to_le_bytes()).is_err());
+    }
+
+    #[test]
+    fn empty_marker_requires_exactly_four_bytes() {
+        assert!(Dialog::from_bytes(&[]).is_err());
+        assert!(Dialog::from_bytes(&[0u8; 3]).is_err());
+        assert!(Dialog::from_bytes(&[0u8; 5]).is_err());
+    }
+
+    #[test]
+    fn single_entry_round_trips() {
+        let dialog = Dialog {
+            entries: BTreeMap::from([(0, "Single entry.".to_string())]),
+        };
+
+        let bytes = dialog.to_bytes().unwrap();
+
+        assert_eq!(Dialog::from_bytes(&bytes).unwrap(), dialog);
     }
 
     #[test]

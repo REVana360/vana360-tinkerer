@@ -43,6 +43,39 @@ supplied client's FTABLE/VTABLE and mounted package layout. Each entry is
 reported as `selected`, `missing`, or `absent`; this keeps later-client mapping
 entries visible without treating them as part of an older client snapshot.
 
+For a deterministic neutral export of the proven area-name, title, and status-
+name tables, use an Xbox publisher-package runtime root:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-client-globals <runtime-root> --out client-globals.json
+```
+
+The schema-1 JSON preserves numeric IDs and all decoded values, records only
+retail-relative source paths, and does not mutate a server checkout. Retail-
+backed output remains private.
+
+Export the English per-zone text catalog separately:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-zone-text <runtime-root> --out zone-text.json
+```
+
+The schema-1 report keeps all 256 zone slots. Exact four-byte empty-dialog
+sentinels become zones with no text entries. The report contains only numeric
+zone and text IDs, decoded text, and retail-relative source paths; it does not
+infer an expansion cutoff or mutate a server checkout.
+
+Export the matching English entity-name catalog separately:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-zone-entities <runtime-root> --out zone-entities.json
+```
+
+The schema-1 report keeps all 256 primary zone slots with numeric entity IDs,
+decoded names, and retail-relative source paths.
+Empty entity tables remain present with no entries.
+The report does not generate server entity records or mutate a server checkout.
+
 Currently, it only supports conversion of the English DATs, but the plan is to eventually support the other languages as well, once the conversion tables and unique control-structures for those are figured out. See plans for future work below.
 
 ## Planned Work

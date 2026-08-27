@@ -72,6 +72,17 @@ macro_rules! define_dat_mappings {
         }
 
         impl DatDescriptor {
+            pub fn dat_id(&self) -> anyhow::Result<DatId> {
+                match self {
+                    $(Self::$variant => Ok(DatId::from($dat_id_en)),)*
+                    $($(
+                        Self::$zone_variant(zone_id) => Ok(DatId::from(
+                            DatIdMapping::get().$zone_dat_field.get_result(zone_id)?
+                        )),
+                    )*)?
+                }
+            }
+
             pub fn use_dat_with<T: DatUsage<U>, U>(&self, dat_user: T) -> anyhow::Result<U> {
                 match self {
                     $(Self::$variant => dat_user.use_dat(Dat::<$dat_format>::from($dat_id_en)),)*
@@ -356,7 +367,7 @@ define_dat_mappings! {
 
 #[cfg(test)]
 mod tests {
-    use super::{DatFormatKind, DatIdMapping};
+    use super::{DatDescriptor, DatFormatKind, DatIdMapping};
     use crate::base::DatId;
 
     #[test]
@@ -377,5 +388,17 @@ mod tests {
         assert!(has_mapping(57_945, DatFormatKind::Dialog));
         assert!(!mappings.iter().any(|mapping| mapping.id == DatId::from(99)));
         assert!(mappings.windows(2).all(|pair| pair[0] < pair[1]));
+    }
+
+    #[test]
+    fn descriptors_resolve_current_english_dat_ids() {
+        assert_eq!(
+            DatDescriptor::AreaNames.dat_id().unwrap().get_inner(),
+            55_465
+        );
+        assert_eq!(
+            DatDescriptor::ZoneData(10).dat_id().unwrap().get_inner(),
+            110
+        );
     }
 }

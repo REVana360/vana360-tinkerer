@@ -1,7 +1,10 @@
 mod analyze_meshes;
 mod audit_dats;
+mod export_client_globals;
 mod export_dat;
 mod export_ximesh;
+mod export_zone_entities;
+mod export_zone_text;
 mod make_dats;
 mod scan_dats;
 mod util;
@@ -12,6 +15,9 @@ use analyze_meshes::analyze_zone_meshes;
 use anyhow::Result;
 use audit_dats::audit_dats;
 use clap::{Parser, Subcommand};
+use export_client_globals::export_client_globals;
+use export_zone_entities::export_zone_entities;
+use export_zone_text::export_zone_text;
 
 use dats::base::DatId;
 use export_ximesh::export_zone_meshes;
@@ -68,6 +74,30 @@ enum Commands {
         xbox_packages: bool,
     },
 
+    ExportClientGlobals {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
+    ExportZoneText {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
+    ExportZoneEntities {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
     ExportDat {
         #[arg(value_name = "FFXI_PATH")]
         ffxi_path: PathBuf,
@@ -114,6 +144,15 @@ async fn main() -> Result<()> {
             xbox_packages,
         } => {
             audit_dats(ffxi_path, out, xbox_packages)?;
+        }
+        Commands::ExportClientGlobals { runtime_root, out } => {
+            export_client_globals(runtime_root, out)?;
+        }
+        Commands::ExportZoneText { runtime_root, out } => {
+            export_zone_text(runtime_root, out)?;
+        }
+        Commands::ExportZoneEntities { runtime_root, out } => {
+            export_zone_entities(runtime_root, out)?;
         }
         Commands::ExportDat {
             ffxi_path,
