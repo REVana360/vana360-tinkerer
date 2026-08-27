@@ -1,14 +1,14 @@
 use std::sync::OnceLock;
 
 use crate::{
-    base::{Dat, DatByZone, ZoneId},
+    base::{Dat, DatByZone, DatId, ZoneId},
     dat_format::DatFormat,
     formats::{
         auto_translate::AutoTranslate, dialog::Dialog, dmsg_table::DmsgTable,
         entity_names::EntityNames, events::Events, furniture_data::FurnitureData,
-        item_info::ItemInfoTable, menu_table::MenuTable,
-        merit_category_table::MeritCategoryTable, merit_table::MeritTable,
-        status_info::StatusInfoTable, xistring_table::XiStringTable, zone_data::ZoneData,
+        item_info::ItemInfoTable, menu_table::MenuTable, merit_category_table::MeritCategoryTable,
+        merit_table::MeritTable, status_info::StatusInfoTable, xistring_table::XiStringTable,
+        zone_data::ZoneData,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -58,7 +58,7 @@ macro_rules! define_dat_mappings {
             $($variant:ident => $dat_format:ident($dat_id_en:literal$(, $dat_id_jp:literal)?)),* $(,)?
         }
         $(, zones: {
-            $($zone_variant:ident => $zone_dat_field:ident),* $(,)?
+            $($zone_variant:ident => $zone_dat_field:ident($zone_dat_format:ident)),* $(,)?
         })?
     ) => {
         #[derive(
@@ -97,6 +97,36 @@ macro_rules! define_dat_mappings {
                 }
             }
         }
+
+        impl DatIdMapping {
+            pub fn format_mappings(&self) -> Vec<DatFormatMapping> {
+                let mut mappings = Vec::new();
+                $(
+                    mappings.push(DatFormatMapping {
+                        id: DatId::from($dat_id_en),
+                        format: DatFormatKind::$dat_format,
+                    });
+                    $(
+                        mappings.push(DatFormatMapping {
+                            id: DatId::from($dat_id_jp),
+                            format: DatFormatKind::$dat_format,
+                        });
+                    )?
+                )*
+                $($(
+                    mappings.extend(self.$zone_dat_field.map.values().map(|dat| {
+                        DatFormatMapping {
+                            id: DatId::from(dat),
+                            format: DatFormatKind::$zone_dat_format,
+                        }
+                    }));
+                )*)?
+
+                mappings.sort_unstable();
+                mappings.dedup();
+                mappings
+            }
+        }
     };
 }
 
@@ -110,6 +140,29 @@ pub struct DatIdMapping {
     pub events: DatByZone<Events>,
 
     pub area_names: Dat<DmsgTable>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum DatFormatKind {
+    AutoTranslate,
+    Dialog,
+    DmsgTable,
+    EntityNames,
+    Events,
+    FurnitureData,
+    ItemInfoTable,
+    MenuTable,
+    MeritCategoryTable,
+    MeritTable,
+    StatusInfoTable,
+    XiStringTable,
+    ZoneData,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DatFormatMapping {
+    pub id: DatId,
+    pub format: DatFormatKind,
 }
 
 static DAT_ID_MAPPING: OnceLock<DatIdMapping> = OnceLock::new();
@@ -293,10 +346,36 @@ define_dat_mappings! {
     },
 
     zones: {
-        ZoneData => zone_data,
-        EntityNames => entities,
-        Dialog => dialog,
-        Dialog2 => dialog2,
-        Events => events,
+        ZoneData => zone_data(ZoneData),
+        EntityNames => entities(EntityNames),
+        Dialog => dialog(Dialog),
+        Dialog2 => dialog2(Dialog),
+        Events => events(Events),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DatFormatKind, DatIdMapping};
+    use crate::base::DatId;
+
+    #[test]
+    fn format_mappings_cover_simple_japanese_and_zone_ids() {
+        let mappings = DatIdMapping::get().format_mappings();
+        let has_mapping = |id, format| {
+            mappings
+                .iter()
+                .any(|mapping| mapping.id == DatId::from(id) && mapping.format == format)
+        };
+
+        assert!(has_mapping(81, DatFormatKind::MenuTable));
+        assert!(has_mapping(55_581, DatFormatKind::DmsgTable));
+        assert!(has_mapping(100, DatFormatKind::ZoneData));
+        assert!(has_mapping(5_820, DatFormatKind::Events));
+        assert!(has_mapping(6_420, DatFormatKind::Dialog));
+        assert!(has_mapping(6_720, DatFormatKind::EntityNames));
+        assert!(has_mapping(57_945, DatFormatKind::Dialog));
+        assert!(!mappings.iter().any(|mapping| mapping.id == DatId::from(99)));
+        assert!(mappings.windows(2).all(|pair| pair[0] < pair[1]));
     }
 }

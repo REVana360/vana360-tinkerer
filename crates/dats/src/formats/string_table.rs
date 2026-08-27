@@ -49,14 +49,28 @@ impl DatFormat for StringTable {
     }
 
     fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
-        if walker.len() % 0x40 != 0 {
-            return Err(anyhow!("Does not have a size that matches a string table."));
-        }
-
-        let string_end_byte = walker.read_at::<u8>(0x40)?;
-        if string_end_byte != 0xFF {
-            return Err(anyhow!("Expected strings to be ended by 0xFF."));
-        }
+        StringTable::parse(walker)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use common::byte_walker::BufferedByteWalker;
+
+    use crate::dat_format::DatFormat;
+
+    use super::StringTable;
+
+    #[test]
+    fn check_type_validates_complete_entries() {
+        let mut valid = vec![b' '; 0x40];
+        valid[..4].copy_from_slice(&1u32.to_le_bytes());
+        valid[0x3F] = 0xFF;
+        assert!(StringTable::check_type(&mut BufferedByteWalker::on(&valid)).is_ok());
+
+        let mut old_false_positive = vec![0u8; 0x80];
+        old_false_positive[0x40] = 0xFF;
+        assert!(StringTable::check_type(&mut BufferedByteWalker::on(&old_false_positive)).is_err());
     }
 }

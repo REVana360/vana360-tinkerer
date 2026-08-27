@@ -22,15 +22,26 @@ One DAT file is converted 1:1 with exactly one editable file.
 
 For an Xbox publisher-package runtime root, pass `--xbox-packages`; the
 command reads FTABLE/VTABLE from `0001`, resolves each DAT to its publisher
-package, and writes a schema-2 package accounting report:
+package, and writes a schema-4 package accounting report:
 
 ```text
 cargo run --locked -p xi-tinkerer-cli -- audit-dats <runtime-root> --xbox-packages --out audit.json
 ```
 
-Report `package` fields name physical source roots. Slot zero is therefore
-`0001`; `R000100` is reported separately because the title does not mount that
-physical root.
+Report `package` fields name physical source roots. Slot zero prefers the
+decoded `R000100` publisher output and falls back to base root `0001` when no
+override exists. This selection is for offline resource extraction; it does
+not change how a title runtime registers content packages. Unselected
+`R000100` files remain separately reported as unmounted.
+
+Known format IDs are classified from Tinkerer's authoritative DAT mapping
+before content probes are attempted. Ambiguous ID aliases are resolved only
+when exactly one mapped format probe succeeds.
+
+The `client_format_mappings` section projects that current mapping through the
+supplied client's FTABLE/VTABLE and mounted package layout. Each entry is
+reported as `selected`, `missing`, or `absent`; this keeps later-client mapping
+entries visible without treating them as part of an older client snapshot.
 
 Currently, it only supports conversion of the English DATs, but the plan is to eventually support the other languages as well, once the conversion tables and unique control-structures for those are figured out. See plans for future work below.
 

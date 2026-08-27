@@ -17,34 +17,24 @@ use dats::{
         merit_table::MeritTable, status_info::StatusInfoTable, string_table::StringTable,
         xistring_table::XiStringTable, zone_data::ZoneData,
     },
+    id_mapping::{DatFormatKind, DatIdMapping},
 };
 use serde::Serialize;
 use walkdir::WalkDir;
 
 const REPORT_SCHEMA_VERSION: u32 = 1;
-const XBOX_REPORT_SCHEMA_VERSION: u32 = 2;
-const XBOX_UNMOUNTED_PACKAGE: &str = "R000100";
-const XBOX_MOUNTED_PACKAGES: &[&str] = &[
-    "0001", "R000101", "R000102", "R000103", "R000104", "R000105", "R000106", "R000107", "R000108",
-    "R000109", "R000110", "R000111",
+const XBOX_REPORT_SCHEMA_VERSION: u32 = 4;
+const XBOX_BASE_PACKAGE: &str = "0001";
+const XBOX_PACKAGE_SLOT_NAMES: &[&str] = &[
+    "R000100", "R000101", "R000102", "R000103", "R000104", "R000105", "R000106", "R000107",
+    "R000108", "R000109", "R000110", "R000111",
 ];
 const XBOX_PACKAGE_NAMES: &[&str] = &[
-    "0001",
-    "R000101",
-    "R000102",
-    "R000103",
-    "R000104",
-    "R000105",
-    "R000106",
-    "R000107",
-    "R000108",
-    "R000109",
-    "R000110",
-    "R000111",
-    XBOX_UNMOUNTED_PACKAGE,
+    "0001", "R000100", "R000101", "R000102", "R000103", "R000104", "R000105", "R000106", "R000107",
+    "R000108", "R000109", "R000110", "R000111",
 ];
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum FormatKind {
     AutoTranslate,
     Dialog,
@@ -130,6 +120,81 @@ impl FormatKind {
             Self::ZoneData => parse_and_write!(ZoneData),
         }
     }
+}
+
+impl From<DatFormatKind> for FormatKind {
+    fn from(format: DatFormatKind) -> Self {
+        match format {
+            DatFormatKind::AutoTranslate => Self::AutoTranslate,
+            DatFormatKind::Dialog => Self::Dialog,
+            DatFormatKind::DmsgTable => Self::DmsgTable,
+            DatFormatKind::EntityNames => Self::EntityNames,
+            DatFormatKind::Events => Self::Events,
+            DatFormatKind::FurnitureData => Self::FurnitureData,
+            DatFormatKind::ItemInfoTable => Self::ItemInfoTable,
+            DatFormatKind::MenuTable => Self::MenuTable,
+            DatFormatKind::MeritCategoryTable => Self::MeritCategoryTable,
+            DatFormatKind::MeritTable => Self::MeritTable,
+            DatFormatKind::StatusInfoTable => Self::StatusInfoTable,
+            DatFormatKind::XiStringTable => Self::XiStringTable,
+            DatFormatKind::ZoneData => Self::ZoneData,
+        }
+    }
+}
+
+fn known_format_mappings() -> Vec<(u32, FormatKind)> {
+    DatIdMapping::get()
+        .format_mappings()
+        .into_iter()
+        .map(|mapping| (mapping.id.get_inner(), mapping.format.into()))
+        .collect()
+}
+
+fn known_formats_by_id(format_mappings: &[(u32, FormatKind)]) -> BTreeMap<u32, Vec<FormatKind>> {
+    let mut formats_by_id = BTreeMap::<u32, Vec<FormatKind>>::new();
+    for (id, format) in format_mappings {
+        formats_by_id.entry(*id).or_default().push(*format);
+    }
+    for formats in formats_by_id.values_mut() {
+        formats.sort_unstable();
+        formats.dedup();
+    }
+    formats_by_id
+}
+
+fn detect_format(
+    path: &PathBuf,
+    ids: &[u32],
+    formats_by_id: &BTreeMap<u32, Vec<FormatKind>>,
+) -> Option<FormatKind> {
+    let mapped_formats = ids
+        .iter()
+        .filter_map(|id| formats_by_id.get(id))
+        .flatten()
+        .copied()
+        .collect::<BTreeSet<_>>();
+
+    if mapped_formats.len() == 1 {
+        return mapped_formats.first().copied();
+    }
+    if mapped_formats.len() > 1 {
+        let detected = SUPPORTED_FORMATS
+            .iter()
+            .copied()
+            .filter(|format| mapped_formats.contains(format) && format.check_path(path))
+            .collect::<Vec<_>>();
+        return if detected.len() == 1 {
+            detected.first().copied()
+        } else {
+            None
+        };
+    }
+
+    SUPPORTED_FORMATS
+        .iter()
+        .copied()
+        .filter(|format| !matches!(format, FormatKind::ZoneData))
+        .find(|format| format.check_path(path))
 }
 
 const SUPPORTED_FORMATS: &[FormatKind] = &[
@@ -268,6 +333,24 @@ struct XboxFormatResult {
     failed: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum XboxClientMappingStatus {
+    Selected,
+    Missing,
+    Absent,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct XboxClientFormatMapping {
+    id: u32,
+    format: String,
+    logical_path: Option<String>,
+    package: Option<String>,
+    selected_path: Option<String>,
+    status: XboxClientMappingStatus,
+}
+
 #[derive(Debug, Default, Serialize)]
 struct XboxAuditSummary {
     mapped_ids: usize,
@@ -280,6 +363,12 @@ struct XboxAuditSummary {
     unreferenced_selected_dats: usize,
     non_selected_mounted_shadow_dats: usize,
     r000100_unmounted_dats: usize,
+    package_zero_overrides: usize,
+    package_zero_base_fallbacks: usize,
+    client_format_mappings: usize,
+    selected_client_format_mappings: usize,
+    missing_client_format_mappings: usize,
+    absent_client_format_mappings: usize,
     recognized: usize,
     round_trip_ok: usize,
     unrecognized: usize,
@@ -299,6 +388,7 @@ struct XboxAuditReport {
     unreferenced_selected_dats: Vec<XboxPackageFile>,
     non_selected_mounted_shadow_dats: Vec<XboxPackageFile>,
     r000100_unmounted_dats: Vec<XboxPackageFile>,
+    client_format_mappings: Vec<XboxClientFormatMapping>,
     format_results: Vec<XboxFormatResult>,
 }
 
@@ -335,6 +425,8 @@ fn audit_pc_dats(ffxi_path: PathBuf, json_output: Option<PathBuf>) -> Result<()>
 
     let mut entries: Vec<_> = context.id_map.iter().collect();
     entries.sort_by_key(|(id, _)| id.get_inner());
+    let format_mappings = known_format_mappings();
+    let formats_by_id = known_formats_by_id(&format_mappings);
 
     let previous_panic_hook = panic::take_hook();
     panic::set_hook(Box::new(|_| {}));
@@ -342,9 +434,12 @@ fn audit_pc_dats(ffxi_path: PathBuf, json_output: Option<PathBuf>) -> Result<()>
         .into_iter()
         .map(|(id, dat_path)| {
             let relative_path = dat_path.to_path();
+            let id = id.get_inner();
             audit_file(
                 &ffxi_path,
-                id.get_inner(),
+                id,
+                std::slice::from_ref(&id),
+                &formats_by_id,
                 &relative_path,
                 &ffxi_path.join(&relative_path),
             )
@@ -378,6 +473,8 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
         )
     })?;
     let mappings = group_xbox_mappings(&id_map);
+    let format_mappings = known_format_mappings();
+    let formats_by_id = known_formats_by_id(&format_mappings);
     let mapped_ids = mappings
         .iter()
         .flat_map(|mapping| {
@@ -391,11 +488,13 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
     mapped_ids.sort_by_key(|mapped_id| mapped_id.id);
     let candidates = collect_xbox_candidates(&runtime_root)?;
     let classification = classify_xbox_candidates(&mappings, &candidates);
-    let selected_paths = classification
+    let selected_files = classification
         .selected_dats
         .iter()
-        .map(|file| (file.logical_path.clone(), file.physical_path.clone()))
+        .map(|file| (file.logical_path.as_str(), file))
         .collect::<HashMap<_, _>>();
+    let client_format_mappings =
+        project_client_format_mappings(&format_mappings, &id_map, &selected_files);
 
     let previous_panic_hook = panic::take_hook();
     panic::set_hook(Box::new(|_| {}));
@@ -403,12 +502,21 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
         .iter()
         .map(|mapping| {
             let logical_path = stable_relative_path(&mapping.dat_path.to_path());
-            let package = xbox_package_name(xbox_package_index(mapping.dat_path)).to_string();
-            let expected_path = format!("{}/{}", package, logical_path);
-            let selected_path = selected_paths.get(&logical_path).cloned();
-            let physical_path = runtime_root.join(&expected_path);
-            let result = if selected_path.is_some() {
-                audit_file(&runtime_root, 0, Path::new(&logical_path), &physical_path)
+            let selected_file = selected_files.get(logical_path.as_str());
+            let package = selected_file
+                .map(|file| file.package.clone())
+                .unwrap_or_else(|| xbox_missing_package_name(mapping.dat_path).to_string());
+            let selected_path = selected_file.map(|file| file.physical_path.clone());
+            let result = if let Some(selected_path) = &selected_path {
+                let physical_path = runtime_root.join(selected_path);
+                audit_file(
+                    &runtime_root,
+                    0,
+                    &mapping.ids,
+                    &formats_by_id,
+                    Path::new(&logical_path),
+                    &physical_path,
+                )
             } else {
                 DatAuditFile {
                     id: 0,
@@ -457,6 +565,29 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
         unreferenced_selected_dats: classification.unreferenced_selected_dats.len(),
         non_selected_mounted_shadow_dats: classification.non_selected_mounted_shadow_dats.len(),
         r000100_unmounted_dats: classification.r000100_unmounted_dats.len(),
+        package_zero_overrides: classification
+            .selected_dats
+            .iter()
+            .filter(|file| file.package == XBOX_PACKAGE_SLOT_NAMES[0])
+            .count(),
+        package_zero_base_fallbacks: classification
+            .selected_dats
+            .iter()
+            .filter(|file| file.package == XBOX_BASE_PACKAGE)
+            .count(),
+        client_format_mappings: client_format_mappings.len(),
+        selected_client_format_mappings: client_format_mappings
+            .iter()
+            .filter(|mapping| matches!(mapping.status, XboxClientMappingStatus::Selected))
+            .count(),
+        missing_client_format_mappings: client_format_mappings
+            .iter()
+            .filter(|mapping| matches!(mapping.status, XboxClientMappingStatus::Missing))
+            .count(),
+        absent_client_format_mappings: client_format_mappings
+            .iter()
+            .filter(|mapping| matches!(mapping.status, XboxClientMappingStatus::Absent))
+            .count(),
         recognized: unique_mappings
             .iter()
             .filter(|mapping| mapping.format.is_some())
@@ -486,6 +617,7 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
         unreferenced_selected_dats: classification.unreferenced_selected_dats,
         non_selected_mounted_shadow_dats: classification.non_selected_mounted_shadow_dats,
         r000100_unmounted_dats: classification.r000100_unmounted_dats,
+        client_format_mappings,
         format_results,
     };
 
@@ -499,6 +631,49 @@ fn audit_xbox_packages(runtime_root: PathBuf, json_output: Option<PathBuf>) -> R
         println!("{}", serde_json::to_string_pretty(&report)?);
     }
     Ok(())
+}
+
+fn project_client_format_mappings(
+    format_mappings: &[(u32, FormatKind)],
+    id_map: &HashMap<DatId, DatPath>,
+    selected_files: &HashMap<&str, &XboxPackageFile>,
+) -> Vec<XboxClientFormatMapping> {
+    format_mappings
+        .iter()
+        .map(|(id, format)| {
+            let Some(dat_path) = id_map.get(&DatId::from(*id)) else {
+                return XboxClientFormatMapping {
+                    id: *id,
+                    format: format.name().to_string(),
+                    logical_path: None,
+                    package: None,
+                    selected_path: None,
+                    status: XboxClientMappingStatus::Absent,
+                };
+            };
+
+            let logical_path = stable_relative_path(&dat_path.to_path());
+            let selected_file = selected_files.get(logical_path.as_str());
+            let package = selected_file
+                .map(|file| file.package.clone())
+                .unwrap_or_else(|| xbox_missing_package_name(*dat_path).to_string());
+            let selected_path = selected_file.map(|file| file.physical_path.clone());
+            let status = if selected_path.is_some() {
+                XboxClientMappingStatus::Selected
+            } else {
+                XboxClientMappingStatus::Missing
+            };
+
+            XboxClientFormatMapping {
+                id: *id,
+                format: format.name().to_string(),
+                logical_path: Some(logical_path),
+                package: Some(package),
+                selected_path,
+                status,
+            }
+        })
+        .collect()
 }
 
 fn group_xbox_mappings(id_map: &HashMap<DatId, DatPath>) -> Vec<XboxMapping> {
@@ -573,12 +748,12 @@ fn classify_xbox_candidates(
 
     for mapping in mappings {
         let logical_path = stable_relative_path(&mapping.dat_path.to_path());
-        let package = xbox_package_name(xbox_package_index(mapping.dat_path));
-        let expected_path = format!("{}/{}", package, logical_path);
-        if let Some(candidate) = candidates_by_path.get(&expected_path.to_ascii_lowercase()) {
+        if let Some(candidate) = select_xbox_candidate(mapping.dat_path, &candidates_by_path) {
             selected_paths.insert(candidate.physical_path.clone());
             classification.selected_dats.push(package_file(candidate));
         } else {
+            let package = xbox_missing_package_name(mapping.dat_path);
+            let expected_path = format!("{}/{}", package, logical_path);
             classification
                 .missing_mapped_paths
                 .push(XboxMappingReference {
@@ -591,21 +766,20 @@ fn classify_xbox_candidates(
     }
 
     for candidate in candidates {
-        if candidate.package == XBOX_UNMOUNTED_PACKAGE {
+        if selected_paths.contains(&candidate.physical_path) {
+            continue;
+        }
+
+        if candidate.package == XBOX_PACKAGE_SLOT_NAMES[0] {
             classification
                 .r000100_unmounted_dats
                 .push(package_file(candidate));
             continue;
         }
-        if !XBOX_MOUNTED_PACKAGES.contains(&candidate.package.as_str()) {
-            continue;
-        }
-        if selected_paths.contains(&candidate.physical_path) {
-            continue;
-        }
 
-        let expected_package = xbox_package_name(xbox_package_index(candidate.dat_path));
-        if !mapped_paths.contains(&candidate.dat_path) && candidate.package == expected_package {
+        let is_selected_candidate = select_xbox_candidate(candidate.dat_path, &candidates_by_path)
+            .is_some_and(|selected| selected.physical_path == candidate.physical_path);
+        if !mapped_paths.contains(&candidate.dat_path) && is_selected_candidate {
             classification
                 .unreferenced_selected_dats
                 .push(package_file(candidate));
@@ -633,6 +807,25 @@ fn classify_xbox_candidates(
         .sort_by(|left, right| left.physical_path.cmp(&right.physical_path));
 
     classification
+}
+
+fn select_xbox_candidate<'a>(
+    dat_path: DatPath,
+    candidates_by_path: &HashMap<String, &'a XboxPackageCandidate>,
+) -> Option<&'a XboxPackageCandidate> {
+    let logical_path = stable_relative_path(&dat_path.to_path());
+    let package = xbox_package_name(xbox_package_index(dat_path));
+    let preferred_path = format!("{}/{}", package, logical_path).to_ascii_lowercase();
+    if let Some(candidate) = candidates_by_path.get(&preferred_path) {
+        return Some(*candidate);
+    }
+
+    if package == XBOX_PACKAGE_SLOT_NAMES[0] {
+        let fallback_path = format!("{}/{}", XBOX_BASE_PACKAGE, logical_path).to_ascii_lowercase();
+        return candidates_by_path.get(&fallback_path).copied();
+    }
+
+    None
 }
 
 fn package_file(candidate: &XboxPackageCandidate) -> XboxPackageFile {
@@ -678,7 +871,16 @@ fn xbox_package_index(dat_path: DatPath) -> usize {
 }
 
 fn xbox_package_name(index: usize) -> &'static str {
-    XBOX_MOUNTED_PACKAGES[index]
+    XBOX_PACKAGE_SLOT_NAMES[index]
+}
+
+fn xbox_missing_package_name(dat_path: DatPath) -> &'static str {
+    let package = xbox_package_name(xbox_package_index(dat_path));
+    if package == XBOX_PACKAGE_SLOT_NAMES[0] {
+        XBOX_BASE_PACKAGE
+    } else {
+        package
+    }
 }
 
 fn summarize_xbox_formats(mappings: &[XboxMappingResult]) -> Vec<XboxFormatResult> {
@@ -731,7 +933,14 @@ fn summarize_xbox_formats(mappings: &[XboxMappingResult]) -> Vec<XboxFormatResul
     results
 }
 
-fn audit_file(root: &Path, id: u32, relative_path: &Path, path: &PathBuf) -> DatAuditFile {
+fn audit_file(
+    root: &Path,
+    id: u32,
+    mapped_ids: &[u32],
+    formats_by_id: &BTreeMap<u32, Vec<FormatKind>>,
+    relative_path: &Path,
+    path: &PathBuf,
+) -> DatAuditFile {
     let path_string = stable_relative_path(relative_path);
 
     let metadata = match fs::metadata(path) {
@@ -756,11 +965,7 @@ fn audit_file(root: &Path, id: u32, relative_path: &Path, path: &PathBuf) -> Dat
         );
     }
 
-    let Some(format) = SUPPORTED_FORMATS
-        .iter()
-        .copied()
-        .find(|format| format.check_path(path))
-    else {
+    let Some(format) = detect_format(path, mapped_ids, formats_by_id) else {
         return DatAuditFile {
             id,
             path: path_string,
@@ -1068,9 +1273,110 @@ mod tests {
             }),
             9
         );
-        assert_eq!(xbox_package_name(0), "0001");
+        assert_eq!(xbox_package_name(0), "R000100");
         assert_eq!(xbox_package_name(1), "R000101");
         assert_eq!(xbox_package_name(11), "R000111");
+        assert_eq!(
+            xbox_missing_package_name(DatPath {
+                rom_id: 1,
+                folder_id: 0,
+                file_id: 11
+            }),
+            "0001"
+        );
+    }
+
+    #[test]
+    fn mapped_format_detection_covers_simple_japanese_zone_and_alias_ids() {
+        let format_mappings = known_format_mappings();
+        let formats_by_id = known_formats_by_id(&format_mappings);
+        let missing_path = PathBuf::from("does-not-exist.DAT");
+        assert!(matches!(
+            detect_format(&missing_path, &[100], &formats_by_id),
+            Some(FormatKind::ZoneData)
+        ));
+        assert!(matches!(
+            detect_format(&missing_path, &[83_891], &formats_by_id),
+            Some(FormatKind::ZoneData)
+        ));
+        assert!(matches!(
+            detect_format(&missing_path, &[81], &formats_by_id),
+            Some(FormatKind::MenuTable)
+        ));
+        assert!(matches!(
+            detect_format(&missing_path, &[55_581], &formats_by_id),
+            Some(FormatKind::DmsgTable)
+        ));
+        assert!(matches!(
+            detect_format(&missing_path, &[100, 101], &formats_by_id),
+            Some(FormatKind::ZoneData)
+        ));
+        assert!(detect_format(&missing_path, &[99], &formats_by_id).is_none());
+    }
+
+    #[test]
+    fn client_format_mapping_projection_distinguishes_selected_missing_and_absent() {
+        let format_mappings = vec![
+            (1, FormatKind::Events),
+            (2, FormatKind::Dialog),
+            (3, FormatKind::ZoneData),
+        ];
+        let id_map = HashMap::from([
+            (
+                DatId::from(1),
+                DatPath {
+                    rom_id: 1,
+                    folder_id: 0,
+                    file_id: 11,
+                },
+            ),
+            (
+                DatId::from(2),
+                DatPath {
+                    rom_id: 1,
+                    folder_id: 0,
+                    file_id: 1,
+                },
+            ),
+        ]);
+        let selected_file = XboxPackageFile {
+            package: "R000100".to_string(),
+            logical_path: "ROM/0/11.DAT".to_string(),
+            physical_path: "R000100/ROM/0/11.DAT".to_string(),
+        };
+        let selected_files = HashMap::from([(selected_file.logical_path.as_str(), &selected_file)]);
+
+        let projected = project_client_format_mappings(&format_mappings, &id_map, &selected_files);
+
+        assert_eq!(projected.len(), 3);
+        assert_eq!(projected[0].status, XboxClientMappingStatus::Selected);
+        assert_eq!(projected[0].package.as_deref(), Some("R000100"));
+        assert_eq!(
+            projected[0].selected_path.as_deref(),
+            Some("R000100/ROM/0/11.DAT")
+        );
+        assert_eq!(projected[1].status, XboxClientMappingStatus::Missing);
+        assert_eq!(projected[1].package.as_deref(), Some("R000102"));
+        assert!(projected[1].selected_path.is_none());
+        assert_eq!(projected[2].status, XboxClientMappingStatus::Absent);
+        assert!(projected[2].logical_path.is_none());
+        assert!(projected[2].package.is_none());
+    }
+
+    #[test]
+    fn conflicting_mapped_formats_are_not_selected_arbitrarily() {
+        let formats_by_id = BTreeMap::from([
+            (1, vec![FormatKind::Events]),
+            (2, vec![FormatKind::ZoneData]),
+        ]);
+        assert!(
+            detect_format(
+                &PathBuf::from("does-not-exist.DAT"),
+                &[1, 2],
+                &formats_by_id
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -1108,38 +1414,49 @@ mod tests {
     }
 
     #[test]
-    fn xbox_classification_separates_missing_unreferenced_shadow_and_unmounted() {
+    fn xbox_classification_prefers_package_zero_override_and_base_fallback() {
         let mappings = vec![
             xbox_mapping(1, 0, 11, &[20, 21]),
+            xbox_mapping(1, 0, 23, &[22]),
+            xbox_mapping(1, 0, 35, &[23]),
             xbox_mapping(1, 0, 0, &[30]),
-            xbox_mapping(1, 0, 1, &[40]),
         ];
         let candidates = vec![
             xbox_candidate("R000100", 1, 0, 11, "R000100/ROM/0/11.DAT"),
             xbox_candidate("R000101", 1, 0, 11, "R000101/ROM/0/11.DAT"),
             xbox_candidate("0001", 1, 0, 11, "0001/ROM/0/11.DAT"),
+            xbox_candidate("0001", 1, 0, 23, "0001/ROM/0/23.DAT"),
+            xbox_candidate("R000100", 1, 0, 0, "R000100/ROM/0/0.DAT"),
             xbox_candidate("R000101", 0, 0, 0, "R000101/ROM0/0/0.DAT"),
             xbox_candidate("0001", 0, 0, 0, "0001/ROM0/0/0.DAT"),
             xbox_candidate("R000101", 1, 0, 0, "R000101/ROM/0/0.DAT"),
         ];
 
         let classification = classify_xbox_candidates(&mappings, &candidates);
-        assert_eq!(classification.selected_dats.len(), 2);
+        assert_eq!(classification.selected_dats.len(), 3);
         assert_eq!(classification.missing_mapped_paths.len(), 1);
         assert_eq!(classification.unreferenced_selected_dats.len(), 1);
-        assert_eq!(classification.non_selected_mounted_shadow_dats.len(), 2);
+        assert_eq!(classification.non_selected_mounted_shadow_dats.len(), 3);
         assert_eq!(classification.r000100_unmounted_dats.len(), 1);
         assert_eq!(
             classification.selected_dats[0].physical_path,
-            "0001/ROM/0/11.DAT"
+            "0001/ROM/0/23.DAT"
         );
         assert_eq!(
             classification.selected_dats[1].physical_path,
+            "R000100/ROM/0/11.DAT"
+        );
+        assert_eq!(
+            classification.selected_dats[2].physical_path,
             "R000101/ROM/0/0.DAT"
         );
         assert_eq!(
             classification.missing_mapped_paths[0].expected_path,
-            "R000102/ROM/0/1.DAT"
+            "0001/ROM/0/35.DAT"
+        );
+        assert_eq!(
+            classification.r000100_unmounted_dats[0].physical_path,
+            "R000100/ROM/0/0.DAT"
         );
     }
 
@@ -1283,7 +1600,7 @@ mod tests {
         let report: serde_json::Value = serde_json::from_str(&first_report).unwrap();
         let summary = &report["summary"];
 
-        assert_eq!(report["schema_version"], 2);
+        assert_eq!(report["schema_version"], 4);
         assert_eq!(summary["mapped_ids"], 3);
         assert_eq!(summary["unique_mappings"], 2);
         assert_eq!(summary["duplicate_id_mappings"], 1);
@@ -1292,14 +1609,27 @@ mod tests {
         assert_eq!(summary["selected_dats"], 2);
         assert_eq!(summary["missing_mapped_paths"], 0);
         assert_eq!(summary["unreferenced_selected_dats"], 1);
-        assert_eq!(summary["non_selected_mounted_shadow_dats"], 1);
-        assert_eq!(summary["r000100_unmounted_dats"], 1);
+        assert_eq!(summary["non_selected_mounted_shadow_dats"], 2);
+        assert_eq!(summary["r000100_unmounted_dats"], 0);
+        assert_eq!(summary["package_zero_overrides"], 1);
+        assert_eq!(summary["package_zero_base_fallbacks"], 0);
+        assert!(summary["client_format_mappings"].as_u64().unwrap() > 0);
+        assert_eq!(summary["selected_client_format_mappings"], 0);
+        assert_eq!(summary["missing_client_format_mappings"], 0);
+        assert_eq!(
+            summary["absent_client_format_mappings"],
+            summary["client_format_mappings"]
+        );
         assert_eq!(summary["unrecognized"], 2);
         assert_eq!(report["format_results"][14]["format"], "unrecognized");
         assert_eq!(report["format_results"][14]["selected"], 2);
         assert_eq!(report["mapped_ids"][0]["id"], 0);
         assert_eq!(report["mapped_ids"][1]["id"], 1);
         assert_eq!(report["mapped_ids"][2]["id"], 2);
+        assert_eq!(
+            report["client_format_mappings"].as_array().unwrap().len() as u64,
+            summary["client_format_mappings"].as_u64().unwrap()
+        );
         assert!(!first_report.contains(&root.to_string_lossy().to_string()));
         assert_eq!(first_report, second_report);
 

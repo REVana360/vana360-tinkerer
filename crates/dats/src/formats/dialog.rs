@@ -141,7 +141,7 @@ impl DatFormat for Dialog {
     }
 
     fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
-        Dialog::get_header_values(walker)?;
+        Dialog::parse(walker)?;
         Ok(())
     }
 }
@@ -150,7 +150,18 @@ impl DatFormat for Dialog {
 mod tests {
     use std::path::PathBuf;
 
+    use common::byte_walker::BufferedByteWalker;
+
     use crate::{dat_format::DatFormat, formats::dialog::Dialog};
+
+    #[test]
+    fn check_type_rejects_a_header_without_its_string_table() {
+        let mut header_only = Vec::new();
+        header_only.extend_from_slice(&0x10000004u32.to_le_bytes());
+        header_only.extend_from_slice(&(8u32 ^ super::DIALOG_MASK).to_le_bytes());
+
+        assert!(Dialog::check_type(&mut BufferedByteWalker::on(&header_only)).is_err());
+    }
 
     #[test]
     pub fn whitegate() {

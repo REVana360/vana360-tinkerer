@@ -194,7 +194,9 @@ impl DatFormat for Events {
 
     fn check_type<T: ByteWalker>(walker: &mut T) -> Result<()> {
         Events::parse(walker)?;
-
+        if walker.remaining() != 0 {
+            return Err(anyhow!("Event DAT has trailing bytes."));
+        }
         Ok(())
     }
 
@@ -207,9 +209,17 @@ impl DatFormat for Events {
 mod tests {
     use std::{fs, path::PathBuf};
 
+    use common::byte_walker::BufferedByteWalker;
+
     use crate::dat_format::DatFormat;
 
     use super::Events;
+
+    #[test]
+    fn check_type_rejects_trailing_bytes_after_an_empty_table() {
+        assert!(Events::check_type(&mut BufferedByteWalker::on(&[0, 0, 0, 0])).is_ok());
+        assert!(Events::check_type(&mut BufferedByteWalker::on(&[0, 0, 0, 0, 1])).is_err());
+    }
 
     #[test]
     pub fn whitegate() {
