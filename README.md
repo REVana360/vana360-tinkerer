@@ -1,9 +1,36 @@
 # XI Tinkerer
 
+> [!NOTE]
+> This is the maintained Vana360 fork. `vana360-tinkerer` contains the
+> project changes; `develop` remains an unmodified mirror of upstream
+> xi-tinkerer. See [Maintaining the fork](docs/MAINTAINING.md).
+
 Tool for decoding and encoding FFXI DAT files.
 
 It can export DATs into human-readable files (YAML), which can then be edited and re-encoded into DAT files.
+
+The Vana360 branch can inventory one FTABLE/VTABLE layout and test each mapped,
+recognized DAT decoder/encoder for exact byte round trips:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- audit-dats <ffxi-path> --out audit.json
+```
+
+The JSON report uses retail-relative paths and does not include the supplied
+client root.
 One DAT file is converted 1:1 with exactly one editable file.
+
+For an Xbox publisher-package runtime root, pass `--xbox-packages`; the
+command reads FTABLE/VTABLE from `0001`, resolves each DAT to its publisher
+package, and writes a schema-2 package accounting report:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- audit-dats <runtime-root> --xbox-packages --out audit.json
+```
+
+Report `package` fields name physical source roots. Slot zero is therefore
+`0001`; `R000100` is reported separately because the title does not mount that
+physical root.
 
 Currently, it only supports conversion of the English DATs, but the plan is to eventually support the other languages as well, once the conversion tables and unique control-structures for those are figured out. See plans for future work below.
 

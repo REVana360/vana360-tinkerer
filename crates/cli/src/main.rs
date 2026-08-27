@@ -1,4 +1,5 @@
 mod analyze_meshes;
+mod audit_dats;
 mod export_dat;
 mod export_ximesh;
 mod make_dats;
@@ -9,6 +10,7 @@ use std::path::PathBuf;
 
 use analyze_meshes::analyze_zone_meshes;
 use anyhow::Result;
+use audit_dats::audit_dats;
 use clap::{Parser, Subcommand};
 
 use dats::base::DatId;
@@ -55,6 +57,17 @@ enum Commands {
         ffxi_path: PathBuf,
     },
 
+    AuditDats {
+        #[arg(value_name = "FFXI_PATH")]
+        ffxi_path: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: Option<PathBuf>,
+
+        #[arg(long)]
+        xbox_packages: bool,
+    },
+
     ExportDat {
         #[arg(value_name = "FFXI_PATH")]
         ffxi_path: PathBuf,
@@ -94,6 +107,13 @@ async fn main() -> Result<()> {
         }
         Commands::ScanDats { ffxi_path } => {
             scan_dats(ffxi_path)?;
+        }
+        Commands::AuditDats {
+            ffxi_path,
+            out,
+            xbox_packages,
+        } => {
+            audit_dats(ffxi_path, out, xbox_packages)?;
         }
         Commands::ExportDat {
             ffxi_path,
