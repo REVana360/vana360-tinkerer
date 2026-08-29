@@ -2,6 +2,7 @@ mod analyze_meshes;
 mod audit_dats;
 mod export_client_globals;
 mod export_dat;
+mod export_items;
 mod export_ximesh;
 mod export_zone_entities;
 mod export_zone_text;
@@ -16,6 +17,7 @@ use anyhow::Result;
 use audit_dats::audit_dats;
 use clap::{Parser, Subcommand};
 use export_client_globals::export_client_globals;
+use export_items::export_items;
 use export_zone_entities::export_zone_entities;
 use export_zone_text::export_zone_text;
 
@@ -75,6 +77,14 @@ enum Commands {
     },
 
     ExportClientGlobals {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
+    ExportItems {
         #[arg(value_name = "RUNTIME_ROOT")]
         runtime_root: PathBuf,
 
@@ -147,6 +157,9 @@ async fn main() -> Result<()> {
         }
         Commands::ExportClientGlobals { runtime_root, out } => {
             export_client_globals(runtime_root, out)?;
+        }
+        Commands::ExportItems { runtime_root, out } => {
+            export_items(runtime_root, out)?;
         }
         Commands::ExportZoneText { runtime_root, out } => {
             export_zone_text(runtime_root, out)?;

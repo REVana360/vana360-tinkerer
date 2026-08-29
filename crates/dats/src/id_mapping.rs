@@ -101,6 +101,13 @@ macro_rules! define_dat_mappings {
                 }
             }
 
+            pub fn jp_dat_id(&self) -> anyhow::Result<DatId> {
+                match self {
+                    $($(Self::$variant => Ok(DatId::from($dat_id_jp)),)*)*
+                    _ => Err(anyhow::anyhow!("JP DAT not mapped."))
+                }
+            }
+
             pub fn use_jp_dat_with<T: DatUsage<U>, U>(&self, dat_user: T) -> anyhow::Result<U> {
                 match self {
                     $($(Self::$variant => dat_user.use_dat(Dat::<$dat_format>::from($dat_id_jp)),)*)*
@@ -400,5 +407,14 @@ mod tests {
             DatDescriptor::ZoneData(10).dat_id().unwrap().get_inner(),
             110
         );
+    }
+
+    #[test]
+    fn descriptors_resolve_only_mapped_japanese_dat_ids() {
+        assert_eq!(
+            DatDescriptor::GeneralItems.jp_dat_id().unwrap().get_inner(),
+            4
+        );
+        assert!(DatDescriptor::Currency.jp_dat_id().is_err());
     }
 }
