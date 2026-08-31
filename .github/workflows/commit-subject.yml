@@ -1,0 +1,22 @@
+name: Commit subject
+
+on:
+  pull_request:
+  push:
+    branches:
+      - vana360-tinkerer
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out contribution head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check commit subject
+        run: python tools/ci/check_commit_subject.py
