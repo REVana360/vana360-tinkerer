@@ -1,9 +1,9 @@
 # XI Tinkerer
 
 > [!NOTE]
-> This is the maintained Vana360 fork. `vana360-tinkerer` contains the
-> project changes; `develop` remains an unmodified mirror of upstream
-> xi-tinkerer. See [Maintaining the fork](docs/MAINTAINING.md).
+> This is the Vana360-maintained project fork. Changes target `main`; see
+> [CONTRIBUTING.md](CONTRIBUTING.md) for its contribution requirements.
+> `upstream/develop` is a read-only intake reference.
 
 Tool for decoding and encoding FFXI DAT files.
 

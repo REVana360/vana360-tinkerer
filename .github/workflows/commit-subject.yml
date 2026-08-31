@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - vana360-tinkerer
+      - main
   workflow_dispatch:
 
 permissions:
