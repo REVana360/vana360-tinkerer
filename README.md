@@ -76,6 +76,17 @@ decoded names, and retail-relative source paths.
 Empty entity tables remain present with no entries.
 The report does not generate server entity records or mutate a server checkout.
 
+Export the matching language-neutral event catalog separately:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-zone-events <runtime-root> --out zone-events.json
+```
+
+The schema-1 report keeps all 256 primary zone slots, records the DAT identity
+and retail-relative selected path, and preserves event blocks, event IDs, data,
+and byte code as stable hexadecimal. It does not generate server event records
+or mutate a server checkout. Retail-backed output remains private.
+
 Export the selected client item tables separately:
 
 ```text

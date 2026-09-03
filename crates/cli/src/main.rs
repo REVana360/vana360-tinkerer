@@ -5,6 +5,7 @@ mod export_dat;
 mod export_items;
 mod export_ximesh;
 mod export_zone_entities;
+mod export_zone_events;
 mod export_zone_text;
 mod make_dats;
 mod scan_dats;
@@ -19,6 +20,7 @@ use clap::{Parser, Subcommand};
 use export_client_globals::export_client_globals;
 use export_items::export_items;
 use export_zone_entities::export_zone_entities;
+use export_zone_events::export_zone_events;
 use export_zone_text::export_zone_text;
 
 use dats::base::DatId;
@@ -108,6 +110,14 @@ enum Commands {
         out: PathBuf,
     },
 
+    ExportZoneEvents {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
     ExportDat {
         #[arg(value_name = "FFXI_PATH")]
         ffxi_path: PathBuf,
@@ -166,6 +176,9 @@ async fn main() -> Result<()> {
         }
         Commands::ExportZoneEntities { runtime_root, out } => {
             export_zone_entities(runtime_root, out)?;
+        }
+        Commands::ExportZoneEvents { runtime_root, out } => {
+            export_zone_events(runtime_root, out)?;
         }
         Commands::ExportDat {
             ffxi_path,
