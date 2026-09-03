@@ -3,6 +3,7 @@ mod audit_dats;
 mod export_client_globals;
 mod export_dat;
 mod export_items;
+mod export_key_items;
 mod export_ximesh;
 mod export_zone_entities;
 mod export_zone_events;
@@ -19,6 +20,7 @@ use audit_dats::audit_dats;
 use clap::{Parser, Subcommand};
 use export_client_globals::export_client_globals;
 use export_items::export_items;
+use export_key_items::export_key_items;
 use export_zone_entities::export_zone_entities;
 use export_zone_events::export_zone_events;
 use export_zone_text::export_zone_text;
@@ -87,6 +89,14 @@ enum Commands {
     },
 
     ExportItems {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "JSON_OUTPUT")]
+        out: PathBuf,
+    },
+
+    ExportKeyItems {
         #[arg(value_name = "RUNTIME_ROOT")]
         runtime_root: PathBuf,
 
@@ -170,6 +180,9 @@ async fn main() -> Result<()> {
         }
         Commands::ExportItems { runtime_root, out } => {
             export_items(runtime_root, out)?;
+        }
+        Commands::ExportKeyItems { runtime_root, out } => {
+            export_key_items(runtime_root, out)?;
         }
         Commands::ExportZoneText { runtime_root, out } => {
             export_zone_text(runtime_root, out)?;

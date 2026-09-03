@@ -98,6 +98,19 @@ items, and currency. It combines the available English and Japanese text with
 neutral item data and records only retail-relative source paths. Retail-backed
 output remains private.
 
+Export the selected client key-item tables separately:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-key-items <runtime-root> --out key-items.json
+```
+
+The schema-1 report decodes the English and Japanese key-item DMSG tables,
+preserves each DAT entry index and numeric key-item ID, and records names,
+plural names, and descriptions when present. It records only retail-relative
+logical and selected source paths. Entries with missing numeric content remain
+in the report with a null ID for validation; no server IDs are renumbered.
+Retail-backed output remains private.
+
 General editable text exports target English DATs. Item reports also decode the
 mapped Japanese text tables. Unknown fields remain in editable exports because
 they are required for byte-accurate re-encoding.
