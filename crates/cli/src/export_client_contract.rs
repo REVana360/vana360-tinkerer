@@ -50,7 +50,7 @@ const CATALOGS: [CatalogEntry; 7] = [
     CatalogEntry {
         file: "zone-entities.json",
         schema_version: 1,
-        purpose: "Per-zone entity IDs, names, target indices, and kinds",
+        purpose: "Per-zone full entity IDs and names",
     },
     CatalogEntry {
         file: "zone-events.json",
@@ -120,6 +120,10 @@ mod tests {
         assert_eq!(report["client_profile"], "july-2009-xbox");
         assert_eq!(report["catalogs"].as_array().unwrap().len(), 7);
         assert_eq!(report["catalogs"][0]["file"], "client-resources.json");
+        assert_eq!(
+            report["catalogs"][4]["purpose"],
+            "Per-zone full entity IDs and names"
+        );
         assert_eq!(first, second);
 
         fs::remove_dir_all(root).unwrap();
