@@ -307,10 +307,7 @@ impl<'a> Decoder<'a> {
                             block_bytes[idx + 2] ^ 0x80,
                             block_bytes[idx + 3] ^ 0x80,
                         ],
-                        _ => {
-                            eprintln!("Invalid sub block length {}", sub_len);
-                            [0, 0, 0, 0]
-                        }
+                        _ => [0, 0, 0, 0],
                     };
                     let value = u32::from_le_bytes(sub_block_bytes);
                     idx += sub_len as usize + 1; // Skip closing bytes as well.
@@ -449,7 +446,6 @@ impl<'a> Decoder<'a> {
         if primary_table_value == 0xFFFE {
             if self.idx >= self.end_idx {
                 self.make_hex_byte_tag("unknown-table-index", first_byte);
-                eprintln!("Missing index table: 0x{:02X}", first_byte);
                 return;
             }
 
@@ -460,10 +456,6 @@ impl<'a> Decoder<'a> {
             let secondary_table_value = ConversionTable::lookup(first_byte, second_byte);
 
             if secondary_table_value == 0xFFFF {
-                eprintln!(
-                    "Missing table lookup: 0x{:02X} 0x{:02X}",
-                    first_byte, second_byte
-                );
                 self.make_hex_bytes_tag("unknown-table-value", &[first_byte, second_byte]);
             } else {
                 // Secondary table decoded character bytes
