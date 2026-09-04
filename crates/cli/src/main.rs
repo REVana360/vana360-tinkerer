@@ -1,6 +1,8 @@
 mod analyze_meshes;
 mod audit_dats;
+mod export_client_contract;
 mod export_client_globals;
+mod export_client_resources;
 mod export_dat;
 mod export_items;
 mod export_key_items;
@@ -18,6 +20,7 @@ use analyze_meshes::analyze_zone_meshes;
 use anyhow::Result;
 use audit_dats::audit_dats;
 use clap::{Parser, Subcommand};
+use export_client_contract::export_client_contract;
 use export_client_globals::export_client_globals;
 use export_items::export_items;
 use export_key_items::export_key_items;
@@ -86,6 +89,14 @@ enum Commands {
 
         #[arg(short, long, value_name = "JSON_OUTPUT")]
         out: PathBuf,
+    },
+
+    ExportClientContract {
+        #[arg(value_name = "RUNTIME_ROOT")]
+        runtime_root: PathBuf,
+
+        #[arg(short, long, value_name = "OUTPUT_DIRECTORY")]
+        out_dir: PathBuf,
     },
 
     ExportItems {
@@ -177,6 +188,12 @@ async fn main() -> Result<()> {
         }
         Commands::ExportClientGlobals { runtime_root, out } => {
             export_client_globals(runtime_root, out)?;
+        }
+        Commands::ExportClientContract {
+            runtime_root,
+            out_dir,
+        } => {
+            export_client_contract(runtime_root, out_dir)?;
         }
         Commands::ExportItems { runtime_root, out } => {
             export_items(runtime_root, out)?;

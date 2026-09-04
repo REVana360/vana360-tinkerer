@@ -43,6 +43,23 @@ supplied client's FTABLE/VTABLE and mounted package layout. Each entry is
 reported as `selected`, `missing`, or `absent`; this keeps later-client mapping
 entries visible without treating them as part of an older client snapshot.
 
+Export the complete client reconciliation contract from one Xbox publisher-
+package runtime root:
+
+```text
+cargo run --locked -p xi-tinkerer-cli -- export-client-contract <runtime-root> --out-dir <catalog-directory>
+```
+
+The command writes an indexed set of global resources, item and key-item
+tables, zone entities, events, text, and the schema-4 DAT audit. Global
+resources retain mapped-but-absent tables and selected tables that the current
+decoder cannot read, so an older client snapshot does not silently inherit
+later IDs. Normalized item payloads live in `items.json`; their corresponding
+global resource entries reference that catalog instead of duplicating it.
+Later item-table mappings remain in the global resource catalog as generic
+selected, absent, missing, or decode-failed evidence.
+All output paths are retail-relative, and retail-backed output remains private.
+
 For a deterministic neutral export of the proven area-name, title, and status-
 name tables, use an Xbox publisher-package runtime root:
 

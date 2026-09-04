@@ -117,6 +117,16 @@ macro_rules! define_dat_mappings {
         }
 
         impl DatIdMapping {
+            pub fn simple_resource_mappings() -> Vec<DatResourceMapping> {
+                vec![
+                    $(DatResourceMapping {
+                        name: stringify!($variant),
+                        descriptor: DatDescriptor::$variant,
+                        format: DatFormatKind::$dat_format,
+                    },)*
+                ]
+            }
+
             pub fn format_mappings(&self) -> Vec<DatFormatMapping> {
                 let mut mappings = Vec::new();
                 $(
@@ -175,6 +185,33 @@ pub enum DatFormatKind {
     StatusInfoTable,
     XiStringTable,
     ZoneData,
+}
+
+impl DatFormatKind {
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::AutoTranslate => "auto_translate",
+            Self::Dialog => "dialog",
+            Self::DmsgTable => "dmsg_table",
+            Self::EntityNames => "entity_names",
+            Self::Events => "events",
+            Self::FurnitureData => "furniture_data",
+            Self::ItemInfoTable => "item_info_table",
+            Self::MenuTable => "menu_table",
+            Self::MeritCategoryTable => "merit_category_table",
+            Self::MeritTable => "merit_table",
+            Self::StatusInfoTable => "status_info_table",
+            Self::XiStringTable => "xi_string_table",
+            Self::ZoneData => "zone_data",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DatResourceMapping {
+    pub name: &'static str,
+    pub descriptor: DatDescriptor,
+    pub format: DatFormatKind,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -416,5 +453,19 @@ mod tests {
             4
         );
         assert!(DatDescriptor::Currency.jp_dat_id().is_err());
+    }
+
+    #[test]
+    fn simple_resource_mappings_expose_descriptor_metadata() {
+        let mappings = DatIdMapping::simple_resource_mappings();
+        let ability_names = mappings
+            .iter()
+            .find(|mapping| mapping.name == "AbilityNames")
+            .unwrap();
+
+        assert_eq!(ability_names.descriptor, DatDescriptor::AbilityNames);
+        assert_eq!(ability_names.format, DatFormatKind::DmsgTable);
+        assert_eq!(ability_names.format.name(), "dmsg_table");
+        assert!(mappings.iter().any(|mapping| mapping.name == "Weapons"));
     }
 }
