@@ -7,18 +7,45 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::dat_format::DatFormat;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct XiStringTable {
+    #[serde(default = "default_header_marker")]
+    header_marker: u32,
+    #[serde(default)]
+    metadata: BTreeMap<u32, XiStringMetadata>,
     strings: BTreeMap<u32, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+struct XiStringMetadata {
+    unknown1: u16,
+    unknown2: u16,
+    unknown3: u16,
+}
+
+#[derive(Debug)]
 struct XiStringMeta {
     offset: u32,
     size: u16,
+    metadata: XiStringMetadata,
 }
 
 const HEADER_SIZE: u32 = 0x38;
+const DEFAULT_HEADER_MARKER: u32 = 304091210;
+
+const fn default_header_marker() -> u32 {
+    DEFAULT_HEADER_MARKER
+}
+
+impl Default for XiStringTable {
+    fn default() -> Self {
+        Self {
+            header_marker: DEFAULT_HEADER_MARKER,
+            metadata: BTreeMap::default(),
+            strings: BTreeMap::default(),
+        }
+    }
+}
 
 impl XiStringTable {
     fn parse<T: ByteWalker>(walker: &mut T) -> Result<Self> {
@@ -43,29 +70,29 @@ impl XiStringTable {
             return Err(anyhow!("unknown1 is {}", unknown1));
         }
 
-        let unknown2: u32 = walker.step()?;
-        // TODO: this value is different in at least IngameMessages2, where it is 304231515
-        if unknown2 != 304091210 {
-            return Err(anyhow!("unknown2 is {}", unknown2));
-        }
+        let header_marker: u32 = walker.step()?;
 
         // Read metadata
         let mut metas = vec![];
         for _ in 0..entry_count {
             let offset: u32 = walker.step()?;
             let size: u16 = walker.step()?;
+            let metadata = XiStringMetadata {
+                unknown1: walker.step()?,
+                unknown2: walker.step()?,
+                unknown3: walker.step()?,
+            };
 
-            // TODO: TimeAndPronouns has a 1 here instead of 0
-            walker.expect_msg(0u16, "Unknown meta 1")?;
-
-            walker.expect_msg(0u16, "Unknown meta 2")?;
-            walker.expect_msg(0u16, "Unknown meta 3")?;
-
-            metas.push(XiStringMeta { offset, size });
+            metas.push(XiStringMeta {
+                offset,
+                size,
+                metadata,
+            });
         }
 
         // Read the strings
         let mut strings = BTreeMap::default();
+        let mut metadata = BTreeMap::default();
         for (idx, meta) in metas.into_iter().enumerate() {
             expect_msg(
                 HEADER_SIZE + meta_bytes + meta.offset,
@@ -76,9 +103,16 @@ impl XiStringTable {
             let string_bytes = walker.take_bytes(meta.size as usize)?;
             let string = Decoder::decode_simple(string_bytes)?;
             strings.insert(idx as u32, string);
+            if meta.metadata != XiStringMetadata::default() {
+                metadata.insert(idx as u32, meta.metadata);
+            }
         }
 
-        Ok(XiStringTable { strings })
+        Ok(XiStringTable {
+            header_marker,
+            metadata,
+            strings,
+        })
     }
 
     pub fn write<T: WritingByteWalker>(&self, walker: &mut T) -> Result<()> {
@@ -116,7 +150,7 @@ impl XiStringTable {
         walker.write(data_bytes);
 
         walker.write::<u32>(0); // unknown1
-        walker.write::<u32>(304091210); // unknown2
+        walker.write(self.header_marker);
 
         // Write metadata for strings
         let mut current_string_offset = 0;
@@ -130,10 +164,10 @@ impl XiStringTable {
             walker.write(current_string_offset);
             walker.write(string_len as u16);
 
-            // Unknowns
-            walker.write(0u16);
-            walker.write(0u16);
-            walker.write(0u16);
+            let metadata = self.metadata.get(&idx).copied().unwrap_or_default();
+            walker.write(metadata.unknown1);
+            walker.write(metadata.unknown2);
+            walker.write(metadata.unknown3);
 
             current_string_offset += string_len as u32;
         }
@@ -168,9 +202,12 @@ impl DatFormat for XiStringTable {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{collections::BTreeMap, path::PathBuf};
 
-    use crate::{dat_format::DatFormat, formats::xistring_table::XiStringTable};
+    use crate::{
+        dat_format::DatFormat,
+        formats::xistring_table::{XiStringMetadata, XiStringTable},
+    };
 
     #[test]
     pub fn pol_messages() {
@@ -188,6 +225,42 @@ mod tests {
         assert_eq!(
             res.strings.get(&104).unwrap(),
             &"Select a character to play.".to_string()
+        );
+    }
+
+    #[test]
+    fn opaque_header_and_entry_metadata_round_trip() {
+        let table = XiStringTable {
+            header_marker: 304231515,
+            metadata: BTreeMap::from([(
+                1,
+                XiStringMetadata {
+                    unknown1: 1,
+                    unknown2: 2,
+                    unknown3: 4,
+                },
+            )]),
+            strings: BTreeMap::from([
+                (0, "Accept %s's invitation?".to_string()),
+                (1, "Form an alliance with %s's party?".to_string()),
+            ]),
+        };
+
+        let bytes = table.to_bytes().unwrap();
+        let parsed = XiStringTable::from_bytes_checked(&bytes).unwrap();
+
+        assert_eq!(parsed.header_marker, 304231515);
+        assert_eq!(parsed.metadata, table.metadata);
+        assert_eq!(parsed.strings, table.strings);
+    }
+
+    #[test]
+    fn new_tables_use_the_canonical_header_marker() {
+        let bytes = XiStringTable::default().to_bytes().unwrap();
+
+        assert_eq!(
+            u32::from_le_bytes(bytes[0x34..0x38].try_into().unwrap()),
+            304091210
         );
     }
 }
