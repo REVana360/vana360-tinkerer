@@ -270,6 +270,7 @@ impl SectionInfo for AbilityInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MagicInfo {
+    level_encoding: MagicLevelEncoding,
     index: u16,
     magic_type: MagicType,
     element: Element,
@@ -291,37 +292,111 @@ pub struct MagicInfo {
     unknowns: Vec<u8>,
 }
 
-impl SectionInfo for MagicInfo {
-    #[inline]
-    fn entry_size() -> usize {
-        100
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum MagicLevelEncoding {
+    U8,
+    I16,
+}
+
+impl MagicLevelEncoding {
+    fn entry_size(self) -> usize {
+        match self {
+            Self::U8 => 64,
+            Self::I16 => 100,
+        }
+    }
+}
+
+impl MagicInfo {
+    fn parse_all(bytes: &[u8]) -> Result<Vec<Self>> {
+        let mut parsed = Vec::new();
+        let mut errors = Vec::new();
+
+        for encoding in [MagicLevelEncoding::U8, MagicLevelEncoding::I16] {
+            if bytes.len() % encoding.entry_size() != 0 {
+                continue;
+            }
+
+            match Self::parse_all_with_encoding(bytes, encoding) {
+                Ok(entries) => parsed.push(entries),
+                Err(error) => errors.push(format!("{encoding:?}: {error}")),
+            }
+        }
+
+        match parsed.len() {
+            1 => Ok(parsed.pop().unwrap()),
+            0 => Err(anyhow!(
+                "Magic section length {} does not match a supported layout: {}",
+                bytes.len(),
+                errors.join("; ")
+            )),
+            _ => Err(anyhow!(
+                "Magic section length {} matches multiple supported layouts.",
+                bytes.len()
+            )),
+        }
     }
 
-    fn parse<T: ByteWalker>(walker: &mut T) -> Result<MagicInfo> {
-        let mut data_bytes = walker.take_bytes(Self::entry_size())?.to_vec();
+    fn parse_all_with_encoding(
+        bytes: &[u8],
+        level_encoding: MagicLevelEncoding,
+    ) -> Result<Vec<Self>> {
+        let entry_size = level_encoding.entry_size();
+        let mut walker = BufferedByteWalker::on(bytes);
+        let mut entries = Vec::with_capacity(bytes.len() / entry_size);
+
+        while walker.remaining() > 0 {
+            entries.push(Self::parse(&mut walker, level_encoding)?);
+        }
+
+        Ok(entries)
+    }
+
+    fn parse<T: ByteWalker>(
+        walker: &mut T,
+        level_encoding: MagicLevelEncoding,
+    ) -> Result<MagicInfo> {
+        let mut data_bytes = walker.take_bytes(level_encoding.entry_size())?.to_vec();
         decode_data_block_masked(&mut data_bytes);
         let mut data_walker = BufferedByteWalker::on(data_bytes);
 
-        let info = MagicInfo {
-            index: data_walker.step::<u16>()?,
-            magic_type: MagicType::from(data_walker.step::<u16>()?),
-            element: Element::try_from(data_walker.step::<u16>()?)?,
-            valid_targets: ValidTargets::from_bits(data_walker.step::<u16>()?).unwrap_or_default(),
-            skill_type: SkillType::from(data_walker.step::<u16>()? as u8),
-            mp_cost: data_walker.step()?,
-            cast_time: data_walker.step()?,
-            recast_time: data_walker.step()?,
-            level_required: (0..24)
-                .into_iter()
-                .filter_map(|idx| {
-                    let level = data_walker.step::<i16>().ok()?;
-                    if level != -1 {
-                        Some((JobEnum::from(idx), level as u16))
-                    } else {
-                        None
+        let index = data_walker.step::<u16>()?;
+        let magic_type = MagicType::from(data_walker.step::<u16>()?);
+        let element = Element::try_from(data_walker.step::<u16>()?)?;
+        let valid_targets = ValidTargets::from_bits(data_walker.step::<u16>()?).unwrap_or_default();
+        let skill_type = SkillType::from(data_walker.step::<u16>()? as u8);
+        let mp_cost = data_walker.step()?;
+        let cast_time = data_walker.step()?;
+        let recast_time = data_walker.step()?;
+        let level_required = (0..24)
+            .filter_map(|idx| {
+                let level = match level_encoding {
+                    MagicLevelEncoding::U8 => {
+                        let level = data_walker.step::<u8>().ok()?;
+                        (level != u8::MAX).then_some(level as u16)
                     }
-                })
-                .collect(),
+                    MagicLevelEncoding::I16 => {
+                        let level = data_walker.step::<i16>().ok()?;
+                        (level != -1).then_some(level as u16)
+                    }
+                };
+
+                level.map(|level| (JobEnum::from(idx), level))
+            })
+            .collect();
+
+        let info = MagicInfo {
+            level_encoding,
+            index,
+            magic_type,
+            element,
+            valid_targets,
+            skill_type,
+            mp_cost,
+            cast_time,
+            recast_time,
+            level_required,
             id: data_walker.step()?,
             icon_id: data_walker.step()?,
             unknown_0x42: data_walker.step()?,
@@ -341,7 +416,7 @@ impl SectionInfo for MagicInfo {
     }
 
     fn write<T: WritingByteWalker>(&self, walker: &mut T) -> Result<()> {
-        let mut data_walker = VecByteWalker::with_size(Self::entry_size());
+        let mut data_walker = VecByteWalker::with_size(self.level_encoding.entry_size());
 
         data_walker.write(self.index);
         data_walker.write::<u16>(self.magic_type.into());
@@ -363,7 +438,19 @@ impl SectionInfo for MagicInfo {
                 .map(|level| level as i16)
                 .unwrap_or(-1);
 
-            data_walker.write(level_required);
+            match self.level_encoding {
+                MagicLevelEncoding::U8 => {
+                    let level_required = if level_required == -1 {
+                        u8::MAX
+                    } else {
+                        u8::try_from(level_required).map_err(|_| {
+                            anyhow!("Magic level {level_required} cannot be stored as u8.")
+                        })?
+                    };
+                    data_walker.write(level_required);
+                }
+                MagicLevelEncoding::I16 => data_walker.write(level_required),
+            }
         }
 
         data_walker.write(self.id);
@@ -382,6 +469,14 @@ impl SectionInfo for MagicInfo {
         walker.write_bytes(data_walker.as_slice());
 
         Ok(())
+    }
+
+    fn write_all<T: WritingByteWalker>(entries: &[Self], walker: &mut T) -> Result<u32> {
+        let start_offset = walker.offset();
+        for entry in entries {
+            entry.write(walker)?;
+        }
+        Ok((walker.offset() - start_offset) as u32)
     }
 }
 
@@ -723,13 +818,13 @@ impl DatFormat for MenuTable {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{collections::BTreeMap, path::PathBuf};
 
     use crate::{
         dat_format::DatFormat,
-        enums::{Element, JobEnum, MagicType, SkillType},
+        enums::{AreaShapeType, Element, JobEnum, MagicType, SkillType, SpellDistance},
         flags::ValidTargets,
-        formats::menu_table::Section,
+        formats::menu_table::{MagicInfo, MagicLevelEncoding, Section},
     };
 
     use super::MenuTable;
@@ -774,6 +869,51 @@ mod tests {
                 .collect()
         );
         assert_eq!(spell.icon_id, 6);
+    }
+
+    #[test]
+    fn legacy_magic_info_round_trip() {
+        let level_required = [(JobEnum::WHM, 6), (JobEnum::SCH, 10)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>();
+        let table = MenuTable {
+            sections: vec![Section::Mgc_(vec![MagicInfo {
+                level_encoding: MagicLevelEncoding::U8,
+                index: 14,
+                magic_type: MagicType::WhiteMagic,
+                element: Element::Light,
+                valid_targets: ValidTargets::SelfTarget | ValidTargets::PartyMember,
+                skill_type: SkillType::HealingMagic,
+                mp_cost: 8,
+                cast_time: 4,
+                recast_time: 20,
+                level_required: level_required.clone(),
+                id: 14,
+                icon_id: 6,
+                unknown_0x42: 0,
+                unknown_0x44: 0,
+                range: SpellDistance::D20,
+                aoe_range: SpellDistance::None,
+                area_shape: AreaShapeType::Single,
+                unknowns: vec![0; 15],
+            }])],
+        };
+
+        let bytes = table.to_bytes().unwrap();
+        assert_eq!(bytes.len(), 128);
+
+        let parsed = MenuTable::from_bytes_checked(&bytes).unwrap();
+        let spell = match &parsed.sections[0] {
+            Section::Mgc_(entries) => &entries[0],
+            _ => unreachable!("expected magic section"),
+        };
+
+        assert_eq!(spell.level_encoding, MagicLevelEncoding::U8);
+        assert_eq!(spell.level_required, level_required);
+
+        let yaml = serde_yaml::to_string(&parsed).unwrap();
+        let parsed_from_yaml: MenuTable = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(parsed_from_yaml.to_bytes().unwrap(), bytes);
     }
 
     #[test]
